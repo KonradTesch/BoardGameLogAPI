@@ -19,9 +19,16 @@ class Player(Base):
 
     sessions = relationship('Session', secondary= "sessions_players")
 
+class Boardgame(Base):
+    __tablename__ = 'boardgames'
+    id = Column(Integer, primary_key=True, autoincrement=True)
+    title = Column(String)
+
+
 class Game_Session(Base):
     __tablename__ = 'sessions'
     id = Column(Integer, primary_key=True, autoincrement=True)
+    game_id = Column(Integer, ForeignKey('boardgames.id'))
     date = Column(String)
     winner_id = Column(Integer, ForeignKey('players.id'))
 
