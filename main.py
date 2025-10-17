@@ -4,13 +4,8 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse
 from pydantic import BaseModel
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_201_CREATED
-
 from db_manager import DataManager
 
-from pathlib import Path
-import os
-
-BASE_DIR = Path(__file__).resolve().parent
 app = FastAPI()
 
 app.mount("/static", StaticFiles(directory="static"), name="static")

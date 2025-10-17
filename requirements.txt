@@ -1,3 +1,5 @@
 sqlalchemy
 dotenv
 psycopg2
+fastapi
+jinja2

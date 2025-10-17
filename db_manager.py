@@ -4,6 +4,9 @@ from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 import os
 
+def setup_database():
+    Base.metadata.create_all(bind=engine)
+
 load_dotenv()
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 
@@ -12,8 +15,8 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 session = SessionLocal()
 
-def setup_database():
-    Base.metadata.create_all(bind=engine)
+setup_database()
+
 
 class DataManager:
 
