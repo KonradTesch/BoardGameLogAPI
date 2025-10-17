@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}BoardgameAPI{% endblock %}</title>
+    <link rel="stylesheet" href="{{ request.url_for('static', path='/style.css') }}">
+</head>
+<body>
+    <header>
+        <h1>Boardgame API</h1>
+        <nav>
+            {% block nav %}{% endblock %}
+        </nav>
+    </header>
+
+    <main class="container">
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer>
+        <p>by Konrad Tesch</p>
+    </footer>
+</body>
+</html>
