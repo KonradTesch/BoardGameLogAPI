@@ -1,0 +1,50 @@
+{% extends "base.html" %}
+
+{% block title %}Movies - My Movie Database{% endblock %}
+
+{% block nav %}
+<ul>
+    <li><a href="{{ url_for('home') }}">Back to Users</a></li>
+</ul>
+{% endblock %}
+
+
+{% block content %}
+
+
+<h2>Movies of {{ user.name }}</h2>
+
+<div class="movie-list">
+    {% for movie in movies %}
+        <div class="movie-card">
+            {% if movie.poster_url %}
+                <img src="{{ movie.poster_url }}" alt="Poster of {{ movie.title }}" class="movie-cover">
+            {% endif %}
+            <form action="{{ url_for('update_movie', user_id=user.id, movie_id=movie.id) }}" method="POST" class="form-inline">
+                <input type="text" name="new_title" value="{{ movie.title }}" required class="movie-title-input">
+                <button type="submit" class="btn-update">Update</button>
+            </form>
+
+            <p class="movie-meta">Director: {{ movie.director }}</p>
+            <p class="movie-meta">Year: {{ movie.year }}</p>
+
+            <form action="{{ url_for('delete_user_movie', user_id=user.id, movie_id=movie.id) }}" method="POST">
+                <button type="submit" class="btn-delete">Delete</button>
+            </form>
+        </div>
+    {% else %}
+        <p>No movies added yet.</p>
+    {% endfor %}
+</div>
+
+<h3>Add a New Movie</h3>
+<form action="{{ url_for('handle_user_movies', user_id=user.id) }}" method="POST" class="form-movie">
+    <label for="title">Title:</label>
+    <input type="text" id="title" name="title" required>
+
+    <label for="year">Year (optional):</label>
+    <input type="number" id="year" name="year">
+
+    <button type="submit" class="btn">Add Movie</button>
+</form>
+{% endblock %}
