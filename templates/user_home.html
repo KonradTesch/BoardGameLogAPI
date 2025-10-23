@@ -3,48 +3,80 @@
 {% block title %}Movies - My Movie Database{% endblock %}
 
 {% block nav %}
-<ul>
-    <li><a href="{{ url_for('home') }}">Back to Users</a></li>
-</ul>
+    <a href="{{ request.url_for('index') }}">Back to Users</a>
 {% endblock %}
 
 
 {% block content %}
 
 
-<h2>Movies of {{ user.name }}</h2>
+<h2>Boardgames of {{ user.name }}</h2>
 
-<div class="movie-list">
-    {% for movie in movies %}
-        <div class="movie-card">
-            {% if movie.poster_url %}
-                <img src="{{ movie.poster_url }}" alt="Poster of {{ movie.title }}" class="movie-cover">
-            {% endif %}
-            <form action="{{ url_for('update_movie', user_id=user.id, movie_id=movie.id) }}" method="POST" class="form-inline">
-                <input type="text" name="new_title" value="{{ movie.title }}" required class="movie-title-input">
-                <button type="submit" class="btn-update">Update</button>
-            </form>
-
-            <p class="movie-meta">Director: {{ movie.director }}</p>
-            <p class="movie-meta">Year: {{ movie.year }}</p>
-
-            <form action="{{ url_for('delete_user_movie', user_id=user.id, movie_id=movie.id) }}" method="POST">
-                <button type="submit" class="btn-delete">Delete</button>
-            </form>
-        </div>
+<h2>Existing Players</h2>
+<ul id="playerList" class="player-list">
+    {% for player in user.players %}
+        <li class="player-entry">
+            <p class="player-name">{{ player.name }}</p>
+            <button class="btn-delete"> delete Player</button>
+        </li>
     {% else %}
-        <p>No movies added yet.</p>
+        <li>No players yet.</li>
     {% endfor %}
-</div>
+</ul>
 
-<h3>Add a New Movie</h3>
-<form action="{{ url_for('handle_user_movies', user_id=user.id) }}" method="POST" class="form-movie">
-    <label for="title">Title:</label>
-    <input type="text" id="title" name="title" required>
-
-    <label for="year">Year (optional):</label>
-    <input type="number" id="year" name="year">
-
-    <button type="submit" class="btn">Add Movie</button>
+<h2>Create a New Player</h2>
+<form onsubmit="addPlayer(event)" id="addPlayer">
+    <label for="playerName">Name:</label>
+    <input type="text" id="playerName" name="playerName" required>
+    <button type="submit" class="btn">Add Player</button>
 </form>
+
+<p class="message"></p>
+
+<h3>Delete User</h3>
+<button onclick="deleteUser({{ user.id }})" class="btn">Delete User</button>
+
+<p class="message"></p>
+
+<script>
+    function deleteUser(userID)
+    {
+        fetch("{{ request.url_for('delete_user', user_id=user.id) }}", {method: "DELETE" })
+           .then(response => {
+               if (response.ok) {
+                   window.location.href = "{{ request.url_for('index') }}";
+               }
+               else {
+                   document.getElementById("nachricht").textContent = "✗ Fehler beim Löschen!";
+               }
+           })
+    }
+
+    async function addPlayer(e)
+    {
+        e.preventDefault();
+
+        const playerName = document.getElementById("playerName").value;
+
+        try
+        {
+            const response = await fetch("{{ request.url_for('create_player', user_id = user.id) }}" + "?player_name=" + playerName, {method: "POST"});
+
+            const data = await response.json();
+
+            if (response.ok)
+            {
+                document.getElementById("addPlayer").reset();
+                document.getElementById("message").textContent = data.message;
+            }
+            else
+            {
+                document.getElementById("message").textContent = data.error;
+            }
+        } catch (error)
+        {
+            document.getElementById("message").textContent = "Error: " + error;
+        }
+    }
+</script>
 {% endblock %}

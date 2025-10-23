@@ -1,7 +1,10 @@
-from modules import User, Base
+import logging
+
+from modules import User, Base, Player
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker
+from sqlalchemy.orm import sessionmaker, Session
 from dotenv import load_dotenv
+import contextlib
 import os
 
 def setup_database():
@@ -40,5 +43,14 @@ class DataManager:
     def get_all_users(self):
         return session.query(User).all()
 
+    def get_user_by_id(self, user_id: int):
+        user = session.query(User).filter(User.id == user_id).first()
+        if user:
+            return user
 
+        return None
 
+    def create_user_player(self, user:User, player_name:str):
+        new_player = Player(name=player_name, user_id=user.id)
+        session.add(new_player)
+        session.commit()
