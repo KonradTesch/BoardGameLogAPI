@@ -1,7 +1,7 @@
 import logging
 
-from modules import User, Base, Player
-from sqlalchemy import create_engine
+from modules import User, Base, Player, Boardgame
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, Session
 from dotenv import load_dotenv
 import contextlib
@@ -62,3 +62,12 @@ class DataManager:
             session.commit()
             return True
         return False
+
+    def create_game(self, game_title: str,min_players: int, max_players:int ):
+        new_game = Boardgame(title=game_title, min_players=min_players, max_players=max_players)
+        if session.query(Boardgame).filter(Boardgame.title == game_title).count() > 0:
+            print(f"Boardgame '{game_title}' already exists")
+            return
+
+        session.add(new_game)
+        session.commit()
