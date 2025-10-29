@@ -20,6 +20,8 @@ class Boardgame(Base):
     __tablename__ = 'boardgames'
     id = Column(Integer, primary_key=True, autoincrement=True)
     title = Column(String)
+    min_players = Column(Integer)
+    max_players = Column(Integer)
 
 
 class Game_Session(Base):

@@ -17,7 +17,8 @@
     {% for player in user.players %}
         <li class="player-entry">
             <p class="player-name">{{ player.name }}</p>
-            <button class="btn-delete"> delete Player</button>
+            <button class="btn-delete" onclick="deletePlayer({{ player.id }})">Delete Player</button>
+            <p class="message" id="delete-player-msg"></p>
         </li>
     {% else %}
         <li>No players yet.</li>
@@ -34,9 +35,9 @@
 <p class="message"></p>
 
 <h3>Delete User</h3>
-<button onclick="deleteUser({{ user.id }})" class="btn">Delete User</button>
+<button class="btn-delete" onclick="deleteUser({{ user.id }})">Delete User</button>
 
-<p class="message"></p>
+<p class="message" id="delete-user-msg"></p>
 
 <script>
     function deleteUser(userID)
@@ -47,7 +48,7 @@
                    window.location.href = "{{ request.url_for('index') }}";
                }
                else {
-                   document.getElementById("nachricht").textContent = "✗ Fehler beim Löschen!";
+                   document.getElementById("delete-user-msg").textContent = "Delete failed";
                }
            })
     }
@@ -67,6 +68,7 @@
             if (response.ok)
             {
                 document.getElementById("addPlayer").reset();
+                location.reload();
                 document.getElementById("message").textContent = data.message;
             }
             else
@@ -77,6 +79,19 @@
         {
             document.getElementById("message").textContent = "Error: " + error;
         }
+    }
+
+    async function deletePlayer(playerID)
+    {
+        fetch("{{request.url_for('delete_player', user_id=user.id) }}" + "?player_id=" + playerID, {method: "DELETE"})
+            .then(response => {
+                if (response.ok) {
+                    location.reload();
+                }
+                else {
+                    document.getElementById("delete-player-msg").textContent = "Delete failed";
+                }
+            })
     }
 </script>
 {% endblock %}

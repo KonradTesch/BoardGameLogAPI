@@ -54,3 +54,11 @@ class DataManager:
         new_player = Player(name=player_name, user_id=user.id)
         session.add(new_player)
         session.commit()
+
+    def delete_player(self, player_id: int):
+        player_to_delete = session.query(Player).filter(Player.id == player_id)
+        if player_to_delete:
+            player_to_delete.delete()
+            session.commit()
+            return True
+        return False

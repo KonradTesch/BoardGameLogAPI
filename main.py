@@ -39,6 +39,7 @@ async def user_home(user_id: int, request: Request):
     }
     return templates.TemplateResponse("user_home.html", context=context)
 
+#region User Endpoints
 
 @app.post("/user")
 async def create_user(user_data: User):
@@ -65,6 +66,10 @@ async def create_user(user_data: User):
 async def delete_user(user_id: int, request: Request):
     data_manager.delete_user(user_id)
 
+#endregion Endpoints
+
+
+#region Player Endpoints
 
 @app.post("/user/{user_id}/player")
 async def create_player(user_id: int,player_name: str):
@@ -84,6 +89,11 @@ async def create_player(user_id: int,player_name: str):
             "message": "Player successfully added",
         })
 
+@app.delete("/user/{user_id}/player")
+async def delete_player(user_id: int, player_id):
+    data_manager.delete_player(player_id)
+
+#endregion
 
 @app.post("user/{user_id}/boardgame")
 async def create_boardgame(user_id: int):
