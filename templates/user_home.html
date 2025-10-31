@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Movies - My Movie Database{% endblock %}
+{% block title %}Boardgame Log API - User Profile{% endblock %}
 
 {% block nav %}
     <a href="{{ request.url_for('index') }}">Back to Users</a>
@@ -8,9 +8,39 @@
 
 
 {% block content %}
+<h2>Game Sessions</h2>
 
 
-<h2>Boardgames of {{ user.name }}</h2>
+<h2>Add Game Session</h2>
+<form id="addSession">
+    <div>
+        <label for="games_select">Select a Boardgame:</label>
+        <select name="boardgames" id="games_select">
+            <option value="default">-- Please Select --</option>
+            {% for game in global_games %}
+            <option value="{{ game.id }}">{{ game.title }}</option>
+            {% else %}
+            <option value="games_error">Games doesn't exist</option>
+            {% endfor %}
+        </select>
+    </div>
+
+    <div>
+        <label for="session_date">Date:</label>
+        <input type="date" id="session_date" name="session_date" required>
+    </div>
+
+    <div>
+        <label for="playerCount">Player Count:</label>
+        <input type="number" id="playerCount" name="playerCount" min="1" required>
+
+        <div id="playerSelectionContainer"></div>
+    </div>
+
+    <button type="submit" class="btn">Add Session</button>
+</form>
+
+<p id="add_session_message"></p>
 
 <h2>Existing Players</h2>
 <ul id="playerList" class="player-list">
@@ -26,7 +56,7 @@
 </ul>
 
 <h2>Create a New Player</h2>
-<form onsubmit="addPlayer(event)" id="addPlayer">
+<form id="addPlayer">
     <label for="playerName">Name:</label>
     <input type="text" id="playerName" name="playerName" required>
     <button type="submit" class="btn">Add Player</button>
@@ -40,7 +70,102 @@
 <p class="message" id="delete-user-msg"></p>
 
 <script>
-    function deleteUser(userID)
+    const playerCountInput = document.getElementById('playerCount');
+    const playerSelectionContainer = document.getElementById('playerSelectionContainer');
+
+    // Available players
+    const availablePlayers = {{ player_names | tojson }};
+
+    function saveCurrentSelections() {
+        const currentSelections = {};
+        for (let i = 1; i <= playerCountInput.value; i++) {
+            const select = document.getElementById(`player${i}`);
+            if (select)
+            {
+                currentSelections[i] = select.value;
+            }
+        }
+        return currentSelections;
+    }
+
+    function generatePlayerDropdowns(count) {
+        const currentSelections = saveCurrentSelections();
+        playerSelectionContainer.innerHTML = '';
+
+        if (count > 0) {
+            for (let i = 1; i <= count; i++) {
+                const div = document.createElement('div');
+                div.innerHTML = `
+                    <label for="player${i}">Player ${i}:</label>
+                    <select id="player${i}" name="player${i}" required>
+                        <option value="">-- Select player --</option>
+                        ${availablePlayers.map(player => `<option value="${player}">${player}</option>`).join('')}
+                    </select>
+                    <br><br>
+                `;
+                playerSelectionContainer.appendChild(div);
+
+                if (currentSelections[i]) {
+                    document.getElementById(`player${i}`).value = currentSelections[i];
+                }
+            }
+        }
+    }
+
+    playerCountInput.addEventListener('input', function() {
+    const count = parseInt(this.value);
+    generatePlayerDropdowns(count);
+    });
+
+    document.getElementById("addSession").addEventListener('submit', function(e) {
+        e.preventDefault();
+
+        const game_id = parseInt(document.getElementById("games_select").value);
+        const date =  document.getElementById("session_date").value.toString()
+        const players = []
+
+        for (let i = 1; i <= playerCountInput.value; i++)
+        {
+            players.push(document.getElementById(`player${i}`).value)
+        }
+
+        addSession(game_id, date, players);
+    });
+
+    async function addSession(boardgame_id, date, players)
+    {
+        try
+        {
+            const response = await fetch("{{ request.url_for('create_session', user_id = user.id) }}", {
+                method: "POST",
+                headers: {
+                        "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    boardgame_id: boardgame_id,
+                    date: date,
+                    players: players
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok)
+            {
+                document.getElementById("addSession").reset();
+                location.reload();
+            }
+            else
+            {
+                document.getElementById("add_session_message").textContent = data.error;
+            }
+        } catch (error)
+        {
+            document.getElementById("add_session_message").textContent = "Error: " + error;
+        }
+    }
+
+    function deleteUser()
     {
         fetch("{{ request.url_for('delete_user', user_id=user.id) }}", {method: "DELETE" })
            .then(response => {
@@ -52,6 +177,8 @@
                }
            })
     }
+
+    document.getElementById("addPlayer").addEventListener("submit", addPlayer);
 
     async function addPlayer(e)
     {
@@ -93,5 +220,6 @@
                 }
             })
     }
+
 </script>
 {% endblock %}

@@ -1,15 +1,14 @@
+import datetime
+
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from pydantic import BaseModel
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_201_CREATED
 from db_manager import DataManager
-from modules import User
 
 app = FastAPI()
-
 
 templates = Jinja2Templates(directory="templates")
 
@@ -18,10 +17,17 @@ data_manager = DataManager()
 class User(BaseModel):
     username: str
 
+class GameSession(BaseModel):
+    boardgame_id: int
+    date: str
+    players: list[str]
+
 
 @app.get("/", response_class=HTMLResponse)
 async def index(request: Request):
     users = data_manager.get_all_users()
+
+
     context = {
         "request": request,
         "users": users
@@ -32,9 +38,13 @@ async def index(request: Request):
 @app.get("/user/{user_id}")
 async def user_home(user_id: int, request: Request):
     user = data_manager.get_user_by_id(user_id)
+    games = data_manager.get_all_games(sort = True)
+
     context = {
         "request": request,
-        "user": user
+        "user": user,
+        "global_games": games,
+        "player_names": [player.name for player in user.players]
     }
     return templates.TemplateResponse("user_home.html", context=context)
 
@@ -94,14 +104,27 @@ async def delete_player(user_id: int, player_id):
 
 #endregion
 
-@app.post("user/{user_id}/boardgame")
-async def create_boardgame(user_id: int):
-    pass
+#region Session Endpoints
 
+@app.post("/user/{user_id}/session")
+async def create_session(user_id: int, session: GameSession):
 
-@app.post("user/{user_id}/session")
-async def create_session(user_id: int):
-    pass
+    print(f"game_id: {session.boardgame_id}, user_id: {user_id}, date: {session.date}, players: {session.players}")
+
+    data_manager.create_session(
+        game_id= int(session.boardgame_id),
+        date = session.date,
+        players=session.players,
+        winner= 1
+    )
+
+    return JSONResponse(
+        status_code=HTTP_201_CREATED,
+        content={
+            "message": "Session successfully created",
+        })
+
+#endregion
 
 if __name__ == "__main__":
     uvicorn.run("main:app", port=8000, reload=True)

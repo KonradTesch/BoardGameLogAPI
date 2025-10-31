@@ -1,6 +1,6 @@
 import logging
 
-from modules import User, Base, Player, Boardgame
+from modules import User, Base, Player, Boardgame, Game_Session, Session_Player
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, Session
 from dotenv import load_dotenv
@@ -71,3 +71,21 @@ class DataManager:
 
         session.add(new_game)
         session.commit()
+
+    def get_all_games(self, sort: bool):
+        games = session.query(Boardgame).all()
+        if sort:
+            games = sorted(games, key=lambda game: game.title)
+        return games
+
+    def create_session(self, game_id: int, date: str, players: list, winner: int):
+        new_session = Game_Session(game_id=game_id, date=date, winner_id=winner)
+        session.add(new_session)
+        session.commit()
+        session.refresh(new_session)
+
+        for player in players:
+            player_id = session.query(Player).filter(Player.name == player).first().id
+            new_session_player = Session_Player(session_id= new_session.id,player_id=player_id, score = 0)
+            session.add(new_session_player)
+            session.commit()
