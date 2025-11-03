@@ -1,8 +1,7 @@
-import logging
-
+from datetime import date
 from modules import User, Base, Player, Boardgame, Game_Session, Session_Player
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import sessionmaker, Session
+from sqlalchemy import create_engine, text,inspect
+from sqlalchemy.orm import sessionmaker
 from dotenv import load_dotenv
 import os
 
@@ -30,10 +29,15 @@ class DataManager:
         session.add(new_user)
         session.commit()
 
+    def update_user(self, user_id: int, new_username: str):
+        user = session.query(User).filter(User.id == user_id).first()
+        user.name = new_username
+        session.commit()
+
     def delete_user(self, index: int):
-        user_to_delete = session.query(User).filter(User.id == index)
+        user_to_delete = session.query(User).filter(User.id == index).first
         if user_to_delete:
-            user_to_delete.delete()
+            session.delete(user_to_delete)
             session.commit()
             return True
 
@@ -49,10 +53,29 @@ class DataManager:
 
         return None
 
-    def create_user_player(self, user:User, player_name:str):
+    def create_player(self, user:User, player_name:str):
         new_player = Player(name=player_name, user_id=user.id)
         session.add(new_player)
         session.commit()
+
+    def update_player(self, user_id: int, player_id: int, new_name: str):
+        user = session.query(User).filter(User.id == user_id).first()
+
+        if not user:
+            raise ValueError("User not found")
+
+        for player in user.players:
+            if player.id != player_id and player.name == new_name:
+                raise ValueError(f"Player {new_name} already exists")
+
+        player = session.query(Player).filter(Player.id == player_id).first()
+
+        if not player:
+            raise ValueError("Player not found")
+
+        player.name = new_name
+        session.commit()
+
 
     def delete_player(self, player_id: int):
         player_to_delete = session.query(Player).filter(Player.id == player_id)
@@ -77,8 +100,8 @@ class DataManager:
             games = sorted(games, key=lambda game: game.title)
         return games
 
-    def create_session(self, game_id: int, date: str, players: list):
-        new_session = Game_Session(game_id=game_id, date=date)
+    def create_session(self, game_id: int, user_id: int, date_value: date, players: list):
+        new_session = Game_Session(game_id=game_id, user_id=user_id, date=date_value)
         session.add(new_session)
         session.commit()
         session.refresh(new_session)
@@ -97,3 +120,15 @@ class DataManager:
 
             session.add(new_session_player)
             session.commit()
+
+    def delete_session(self, session_id: int):
+        session_to_delete = session.query(Game_Session).filter(Game_Session.id == session_id).first()
+        if session_to_delete:
+            session.delete(session_to_delete)
+            session.commit()
+            return True
+        return False
+
+    def get_session_by_id(self, session_id: int):
+        game_session = session.query(Game_Session).filter(Game_Session.id == session_id).first()
+        return game_session

@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block title %}Boardgame Log API - User Profile{% endblock %}
+
+{% block nav %}
+    <a href="{{ request.url_for('user_home', user_id = user.id) }}">Back to User Home</a>
+{% endblock %}
+
+
+{% block content %}
+<h2>Game Session</h2>
+    <ul id="session-details" class="session-details">
+        <li>
+        <p> Game: {{ session.game.title }}</p>
+        </li>
+        <li>
+            <p>Date: {{ session.date }}</p>
+        </li>
+    </ul>
+
+    <h3>Players</h3>
+    <ul id="session-players" class="session-details">
+    {% for player in session.session_players %}
+        <li>
+            <p>{{ player.player.name }}   -   Score: {{ player.score }} {% if player.winner %} *Winner* {% endif %}</p>
+        </li>
+    {% endfor %}
+    </ul>
+
+    <button class="btn-edit">Edit</button>
+    <button class="btn-delete" onclick="deleteSession()">Delete</button>
+    <p id="delete-session-msg"></p>
+
+
+<script>
+    function deleteSession()
+    {
+        fetch("{{ request.url_for('delete_session', user_id=user.id, session_id=session.id) }}", {method: "DELETE" })
+           .then(response => {
+               if (response.ok) {
+                   window.location.href = "{{ request.url_for('user_home', user_id = user.id) }}";
+               }
+               else {
+                   document.getElementById("delete-session-msg").textContent = "Delete failed";
+               }
+           })
+    }
+</script>
+{% endblock %}

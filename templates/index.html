@@ -20,7 +20,7 @@
 </ul>
 
 <h2>Create a New User</h2>
-<form onsubmit="addUser" id="addUser">
+<form id="add_user">
     <label for="username">Name:</label>
     <input type="text" id="username" name="username" required>
     <button type="submit" class="btn">Add User</button>
@@ -29,7 +29,9 @@
 <p id="message"></p>
 
 <script>
-    async function addUser()
+    document.getElementById("add_user").addEventListener("submit", addUser)
+
+    async function addUser(e)
     {
         e.preventDefault();
 
@@ -58,7 +60,6 @@
         } catch (error) {
             document.getElementById("message").textContent = "Error: " + error;
         }
-    });
     }
 
 </script>

@@ -2,14 +2,33 @@
 
 {% block title %}Boardgame Log API - User Profile{% endblock %}
 
+{% block header %}Boardgame API - {{ user.name }}{% endblock %}
 {% block nav %}
     <a href="{{ request.url_for('index') }}">Back to Users</a>
 {% endblock %}
 
 
 {% block content %}
-<h2>Game Sessions</h2>
+<br>
+<button class="btn-delete" onclick="deleteUser()">Delete User</button>
+<button class="btn-edit" onclick="generateRenameUserSection()">Rename User</button>
+    <div id="rename-user-container"></div>
 
+<p class="message" id="delete-user-msg"></p>
+<h2>Game Sessions</h2>
+    <ul id="session-list" class="session-list">
+    {%  for session in user.sessions %}
+        <li class="session-entry">
+        <p> {{ session.game.title }} - {{ session.date }}</p>
+            <a href="{{ request.url_for('session_details', user_id = user.id, session_id = session.id) }}">
+                <button class="btn">Show Details</button>
+            </a>
+
+        </li>
+    {% else %}
+        <li>No sessions yet</li>
+    {%  endfor %}
+    </ul>
 
 <h2>Add Game Session</h2>
 <form id="addSession">
@@ -43,12 +62,14 @@
 <p id="add_session_message"></p>
 
 <h2>Existing Players</h2>
-<ul id="playerList" class="player-list">
+<ul id="player-list" class="player-list">
     {% for player in user.players %}
         <li class="player-entry">
             <p class="player-name">{{ player.name }}</p>
+            <button class="btn-edit" onclick="generateRenamePlayerSection({{ player.id }}, '{{ player.name }}')">Rename</button>
             <button class="btn-delete" onclick="deletePlayer({{ player.id }})">Delete Player</button>
-            <p class="message" id="delete-player-msg"></p>
+            <div id="rename-player-container-{{ player.id }}"></div>
+            <p class="message" id="delete-player-msg-{{ player.id }}"></p>
         </li>
     {% else %}
         <li>No players yet.</li>
@@ -64,11 +85,6 @@
 
 <p class="message"></p>
 
-<h3>Delete User</h3>
-<button class="btn-delete" onclick="deleteUser({{ user.id }})">Delete User</button>
-
-<p class="message" id="delete-user-msg"></p>
-
 <script>
     const playerCountInput = document.getElementById('playerCount');
     const playerSelectionContainer = document.getElementById('playerSelectionContainer');
@@ -76,6 +92,122 @@
     // Available players
     const availablePlayers = {{ player_names | tojson }};
 
+    function deleteUser() {
+        fetch("{{ request.url_for('delete_user', user_id=user.id) }}", {method: "DELETE" })
+           .then(response => {
+               if (response.ok) {
+                   window.location.href = "{{ request.url_for('index') }}";
+               }
+               else {
+                   document.getElementById("delete-user-msg").textContent = "Delete failed";
+               }
+           })
+    }
+
+    function generateRenameUserSection() {
+        const renameContainer = document.getElementById("rename-user-container");
+
+        const div = document.createElement('div');
+
+        div.innerHTML = `
+                    <form id="rename_user">
+                    <label for="new_username">new Username:</label>
+                    <input type="text" name="new_username" id="new_username">
+                    <button type="submit" class="btn"> Rename</button>
+                    </form>
+                    <p id="rename_msg"></p>
+                `;
+
+        renameContainer.appendChild(div);
+
+        document.getElementById("rename_user").addEventListener("submit", renameUser);
+    }
+
+    async function renameUser(e) {
+        e.preventDefault();
+
+        const new_username = document.getElementById("new_username").value
+
+        try {
+            const response = await fetch("{{ request.url_for("update_user", user_id = user.id) }}", {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    username: new_username
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                location.reload();
+
+            } else {
+                document.getElementById("rename_msg").textContent = data.error;
+            }
+        } catch (error) {
+            document.getElementById("rename_msg").textContent = "Error: " + error;
+        }
+    }
+
+     function generateRenamePlayerSection(playerId, currentName) {
+        const renameContainer = document.getElementById(`rename-player-container-${playerId}`);
+
+        // Clear existing content
+        renameContainer.innerHTML = '';
+
+        const div = document.createElement('div');
+
+        div.innerHTML = `
+                    <form id="rename_player_${playerId}">
+                    <label for="new_playername_${playerId}">New Player Name:</label>
+                    <input type="text" name="new_playername_${playerId}" id="new_playername_${playerId}" value="${currentName}">
+                    <button type="submit" class="btn">Rename</button>
+                    <button type="button" class="btn-delete" onclick="cancelRenamePlayer(${playerId})">Cancel</button>
+                    </form>
+                    <p id="rename_player_msg_${playerId}"></p>
+                `;
+
+        renameContainer.appendChild(div);
+
+        document.getElementById(`rename_player_${playerId}`).addEventListener("submit", (e) => renamePlayer(e, playerId));
+    }
+
+    function cancelRenamePlayer(playerId) {
+        const renameContainer = document.getElementById(`rename-player-container-${playerId}`);
+        renameContainer.innerHTML = '';
+    }
+
+    async function renamePlayer(e, playerId) {
+        e.preventDefault();
+
+        const new_playername = document.getElementById(`new_playername_${playerId}`).value;
+
+        try {
+            const response = await fetch("{{ request.url_for('update_player', user_id = user.id) }}", {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    player_id: playerId,
+                    player_name: new_playername
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                location.reload();
+            } else {
+                document.getElementById(`rename_player_msg_${playerId}`).textContent = data.error;
+            }
+        } catch (error) {
+            document.getElementById(`rename_player_msg_${playerId}`).textContent = "Error: " + error;
+        }
+    }
     function saveCurrentSelections() {
         const currentSelections = {};
         for (let i = 1; i <= playerCountInput.value; i++) {
@@ -125,7 +257,7 @@
         e.preventDefault();
 
         const game_id = parseInt(document.getElementById("games_select").value);
-        const date =  document.getElementById("session_date").value.toString();
+        const date =  document.getElementById("session_date").value;
         const players = [];
 
         for (let i = 1; i <= playerCountInput.value; i++)
@@ -140,8 +272,7 @@
         addSession(game_id, date, players);
     });
 
-    async function addSession(boardgame_id, date, players)
-    {
+    async function addSession(boardgame_id, date, players) {
         try
         {
             const response = await fetch("{{ request.url_for('create_session', user_id = user.id) }}", {
@@ -173,23 +304,9 @@
         }
     }
 
-    function deleteUser()
-    {
-        fetch("{{ request.url_for('delete_user', user_id=user.id) }}", {method: "DELETE" })
-           .then(response => {
-               if (response.ok) {
-                   window.location.href = "{{ request.url_for('index') }}";
-               }
-               else {
-                   document.getElementById("delete-user-msg").textContent = "Delete failed";
-               }
-           })
-    }
-
     document.getElementById("addPlayer").addEventListener("submit", addPlayer);
 
-    async function addPlayer(e)
-    {
+    async function addPlayer(e) {
         e.preventDefault();
 
         const playerName = document.getElementById("playerName").value;
@@ -216,8 +333,7 @@
         }
     }
 
-    async function deletePlayer(playerID)
-    {
+    async function deletePlayer(playerID) {
         fetch("{{request.url_for('delete_player', user_id=user.id) }}" + "?player_id=" + playerID, {method: "DELETE"})
             .then(response => {
                 if (response.ok) {

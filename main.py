@@ -1,11 +1,10 @@
-import datetime
-
+from datetime import date
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from pydantic import BaseModel
-from starlette.status import HTTP_400_BAD_REQUEST, HTTP_201_CREATED
+from starlette.status import HTTP_400_BAD_REQUEST, HTTP_201_CREATED, HTTP_200_OK
 from db_manager import DataManager
 
 app = FastAPI()
@@ -70,13 +69,21 @@ async def create_user(user_data: User):
         "username": user_data.username
     })
 
+@app.patch("/user/{user_id}")
+async def update_user(user_id: int, user_data: User):
+    data_manager.update_user(user_id, user_data.username)
+    return JSONResponse( status_code=HTTP_200_OK,
+        content={
+        "message": "User successfully updated",
+        "username": user_data.username
+    })
+
 
 @app.delete("/user/{user_id}")
 async def delete_user(user_id: int, request: Request):
     data_manager.delete_user(user_id)
 
 #endregion Endpoints
-
 
 #region Player Endpoints
 
@@ -91,12 +98,31 @@ async def create_player(user_id: int,player_name: str):
                 content={"error": "Player exists already"}
             )
 
-    data_manager.create_user_player(user, player_name)
+    data_manager.create_player(user, player_name)
     return JSONResponse(
         status_code=HTTP_201_CREATED,
         content={
             "message": "Player successfully added",
         })
+
+
+@app.patch("/user/{user_id}/player")
+async def update_player(user_id: int, player_data: dict):
+    player_id = player_data.get("player_id")
+    player_name = player_data.get("player_name")
+
+    try:
+        data_manager.update_player(user_id, player_id, player_name)
+        return JSONResponse(
+            status_code=HTTP_200_OK,
+            content={"message": "Player successfully updated"}
+        )
+    except ValueError as e:
+        return JSONResponse(
+            status_code=HTTP_400_BAD_REQUEST,
+            content={"error": str(e)}
+        )
+
 
 @app.delete("/user/{user_id}/player")
 async def delete_player(user_id: int, player_id):
@@ -106,14 +132,30 @@ async def delete_player(user_id: int, player_id):
 
 #region Session Endpoints
 
+@app.get("/user/{user_id}/session/{session_id}")
+async def session_details(user_id: int, session_id: int, request: Request):
+    user = data_manager.get_user_by_id(user_id)
+    session = data_manager.get_session_by_id(session_id)
+
+    context = {
+        "request": request,
+        "user": user,
+        "session": session
+    }
+    return templates.TemplateResponse("session_details.html", context=context)
+
+
 @app.post("/user/{user_id}/session")
 async def create_session(user_id: int, session: GameSession):
-
     print(f"game_id: {session.boardgame_id}, user_id: {user_id}, date: {session.date}, players: {session.players}")
+
+    date_splits = session.date.split("-")
+    date_value = date(int(date_splits[0]), int(date_splits[1]), int(date_splits[2]))
 
     data_manager.create_session(
         game_id= int(session.boardgame_id),
-        date = session.date,
+        user_id = user_id,
+        date_value = date_value,
         players=session.players,
     )
 
@@ -122,6 +164,10 @@ async def create_session(user_id: int, session: GameSession):
         content={
             "message": "Session successfully created",
         })
+
+@app.delete("/user/{user_id}/session/{session_id}")
+async def delete_session(user_id: int, session_id: int):
+    data_manager.delete_session(session_id)
 
 #endregion
 
