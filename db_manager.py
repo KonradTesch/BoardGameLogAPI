@@ -43,35 +43,44 @@ class DataManager:
 
         return False
 
+    def validate_user(self, user_id:int):
+        user = session.query(User).filter(User.id == user_id).first()
+
+        if not user:
+            raise ValueError("User not found")
+
+        return user
+
     def get_all_users(self):
         return session.query(User).all()
 
     def get_user_by_id(self, user_id: int):
-        user = session.query(User).filter(User.id == user_id).first()
-        if user:
-            return user
+        user = self.validate_user(user_id)
 
-        return None
+        return user
+
 
     def create_player(self, user:User, player_name:str):
         new_player = Player(name=player_name, user_id=user.id)
         session.add(new_player)
         session.commit()
 
-    def update_player(self, user_id: int, player_id: int, new_name: str):
-        user = session.query(User).filter(User.id == user_id).first()
+    def validate_player(self, player_id:int):
+        player = session.query(Player).filter(Player.id == player_id).first()
 
-        if not user:
-            raise ValueError("User not found")
+        if not player:
+            raise ValueError("Player not found")
+
+        return player
+
+    def update_player(self, user_id: int, player_id: int, new_name: str):
+        user = self.validate_user(user_id)
 
         for player in user.players:
             if player.id != player_id and player.name == new_name:
                 raise ValueError(f"Player {new_name} already exists")
 
-        player = session.query(Player).filter(Player.id == player_id).first()
-
-        if not player:
-            raise ValueError("Player not found")
+        player = self.validate_player(player_id)
 
         player.name = new_name
         session.commit()
@@ -120,6 +129,44 @@ class DataManager:
 
             session.add(new_session_player)
             session.commit()
+
+    def validate_session(self, session_id: int) -> Game_Session:
+        game_session = session.query(Game_Session).filter(Game_Session.id == session_id).first()
+
+        if not game_session:
+            raise ValueError("Game session not found")
+
+        return game_session
+
+    def update_session(self, session_id: int, game_id: int, date_value: date, players: list):
+
+        game_session = self.validate_session(session_id)
+
+        game_session.game_id = game_id
+        game_session.date = date_value
+
+        for player in players:
+            player_id = player["player_id"]
+            self.validate_player(player_id)
+
+            session_player = session.query(Session_Player).filter(Session_Player.session_id == game_session.id).filter(Session_Player.player_id == player_id).first()
+
+            if not session_player:
+                new_session_player = Session_Player(
+                    session_id = game_session.id,
+                    player_id = player_id,
+                    score = player["score"],
+                    winner = player["winner"]
+                )
+
+                session.add(new_session_player)
+            else:
+                session_player.score = player["score"]
+                session_player.winner = player["winner"]
+
+            session.commit()
+
+
 
     def delete_session(self, session_id: int):
         session_to_delete = session.query(Game_Session).filter(Game_Session.id == session_id).first()

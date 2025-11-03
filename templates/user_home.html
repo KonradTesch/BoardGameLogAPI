@@ -112,8 +112,8 @@
         div.innerHTML = `
                     <form id="rename_user">
                     <label for="new_username">new Username:</label>
-                    <input type="text" name="new_username" id="new_username">
-                    <button type="submit" class="btn"> Rename</button>
+                    <input type="text" name="new_username" id="new_username", value="{{ user.name }}">
+                    <button type="submit" class="btn">Rename</button>
                     </form>
                     <p id="rename_msg"></p>
                 `;

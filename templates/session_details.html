@@ -6,12 +6,13 @@
     <a href="{{ request.url_for('user_home', user_id = user.id) }}">Back to User Home</a>
 {% endblock %}
 
-
 {% block content %}
-<h2>Game Session</h2>
+<!-- View Mode -->
+<div id="view-mode">
+    <h2>Game Session</h2>
     <ul id="session-details" class="session-details">
         <li>
-        <p> Game: {{ session.game.title }}</p>
+            <p>Game: {{ session.game.title }}</p>
         </li>
         <li>
             <p>Date: {{ session.date }}</p>
@@ -22,28 +23,205 @@
     <ul id="session-players" class="session-details">
     {% for player in session.session_players %}
         <li>
-            <p>{{ player.player.name }}   -   Score: {{ player.score }} {% if player.winner %} *Winner* {% endif %}</p>
+            <p>{{ player.player.name }} - Score: {{ player.score }} {% if player.winner %} *Winner* {% endif %}</p>
         </li>
     {% endfor %}
     </ul>
 
-    <button class="btn-edit">Edit</button>
+    <button class="btn-edit" onclick="switchToEditMode()">Edit</button>
     <button class="btn-delete" onclick="deleteSession()">Delete</button>
     <p id="delete-session-msg"></p>
+</div>
 
+<!-- Edit Mode (initially hidden) -->
+<div id="edit-mode" style="display: none;">
+    <h2>Edit Game Session</h2>
+    <form id="edit-session-form">
+
+            <div>
+                <label for="game-select">Game:</label>
+                <select id="game-select" required>
+                    {% for game in games %}
+                    <option value="{{ game.id }}" {% if game.id == session.game.id %}selected{% endif %}>{{ game.title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label for="session-date">Date:</label>
+                <input type="date" id="session-date" value="{{ session.date }}" required>
+            </div>
+            <br>
+
+            <h3>Player</h3>
+            {% for player in session.session_players %}
+            <div class="player-edit-row">
+                <label>{{ player.player.name }}:</label>
+                <input type="number" id="player-score-{{ player.player.id }}" value="{{ player.score }}"
+                       name="player-score-{{ player.player.id }}" required>
+                <label for="player-winner-{{ player.player.id }}">Winner</label>
+                <input type="checkbox" id="player-winner-{{ player.player.id }}"
+                       name="player-winner-{{ player.player.id }}" {% if player.winner %}checked{% endif %}>
+                <input type="hidden" name="player-ids" value="{{ player.player.id }}">
+            </div>
+            {% endfor %}
+            <br>
+
+
+            <div>
+                <label for="new-player-select">Add Player:</label>
+                <select id="new-player-select">
+                    <option value="">-- Select Player --</option>
+                    {% for player in user.players %}
+                        {% if player.id not in session.session_players|map(attribute='player.id')|list %}
+                        <option value="{{ player.id }}">{{ player.name }}</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+                <label for="new-player-score">Score:</label>
+                <input type="number" id="new-player-score">
+                <label for="new-player-winner">Winner</label>
+                <input type="checkbox" id="new-player-winner">
+                <button type="button" class="btn-add" onclick="addPlayerRow()">Add Player</button>
+            </div>
+            <div id="new-players-container"></div>
+            <br>
+
+        <div class="form-buttons">
+            <button type="submit" class="btn">Save Changes</button>
+            <button type="button" class="btn-delete" onclick="cancelEdit()">Cancel</button>
+        </div>
+    </form>
+    <p id="update-session-msg"></p>
+</div>
 
 <script>
-    function deleteSession()
-    {
-        fetch("{{ request.url_for('delete_session', user_id=user.id, session_id=session.id) }}", {method: "DELETE" })
-           .then(response => {
-               if (response.ok) {
-                   window.location.href = "{{ request.url_for('user_home', user_id = user.id) }}";
-               }
-               else {
-                   document.getElementById("delete-session-msg").textContent = "Delete failed";
-               }
-           })
+    // Function to delete the session
+    function deleteSession() {
+        fetch("{{ request.url_for('delete_session', user_id=user.id, session_id=session.id) }}", {method: "DELETE"})
+            .then(response => {
+                if (response.ok) {
+                    window.location.href = "{{ request.url_for('user_home', user_id=user.id) }}";
+                } else {
+                    document.getElementById("delete-session-msg").textContent = "Delete failed";
+                }
+            });
+    }
+
+
+    function switchToEditMode() {
+        document.getElementById("view-mode").style.display = "none";
+        document.getElementById("edit-mode").style.display = "block";
+    }
+
+
+    function cancelEdit() {
+        document.getElementById("edit-mode").style.display = "none";
+        document.getElementById("view-mode").style.display = "block";
+    }
+
+
+    function addPlayerRow() {
+        const playerId = document.getElementById("new-player-select").value;
+        const playerName = document.getElementById("new-player-select").options[document.getElementById("new-player-select").selectedIndex].text;
+        const score = document.getElementById("new-player-score").value;
+        const isWinner = document.getElementById("new-player-winner").checked;
+
+        if (!playerId || !score) {
+            alert("Please select a player and enter a score");
+            return;
+        }
+
+        const container = document.getElementById("new-players-container");
+
+        const row = document.createElement("div");
+        row.className = "player-edit-row";
+        row.innerHTML = `
+            <label>${playerName}:</label>
+            <input type="number" name="new-player-score-${playerId}" value="${score}" required>
+            <label for="new-player-winner-${playerId}">Winner</label>
+            <input type="checkbox" name="new-player-winner-${playerId}" ${isWinner ? 'checked' : ''}>
+            <input type="hidden" name="new-player-ids" value="${playerId}">
+            <button type="button" class="btn-delete" onclick="this.parentNode.remove()">Remove</button>
+        `;
+
+        container.appendChild(row);
+
+
+        document.getElementById("new-player-select").value = "";
+        document.getElementById("new-player-score").value = "";
+        document.getElementById("new-player-winner").checked = false;
+    }
+
+
+    document.getElementById("edit-session-form").addEventListener("submit", function(e) {
+        e.preventDefault();
+
+        // Gather basic session data
+        const gameId = document.getElementById("game-select").value;
+        const sessionDate = document.getElementById("session-date").value;
+
+        // Gather existing players data
+        const existingPlayers = [];
+        const playerIds = document.getElementsByName("player-ids");
+        for (let i = 0; i < playerIds.length; i++) {
+            const playerId = playerIds[i].value;
+            const score = document.getElementById(`player-score-${playerId}`).value;
+            const winner = document.getElementById(`player-winner-${playerId}`).checked;
+
+            existingPlayers.push({
+                player_id: parseInt(playerId),
+                score: parseInt(score),
+                winner: winner
+            });
+        }
+
+        // Gather new players data
+        const newPlayers = [];
+        const newPlayerIds = document.getElementsByName("new-player-ids");
+        for (let i = 0; i < newPlayerIds.length; i++) {
+            const playerId = newPlayerIds[i].value;
+            const score = document.getElementsByName(`new-player-score-${playerId}`)[0].value;
+            const winner = document.getElementsByName(`new-player-winner-${playerId}`)[0].checked;
+
+            newPlayers.push({
+                player_id: parseInt(playerId),
+                score: parseInt(score),
+                winner: winner
+            });
+        }
+
+        // Create the request payload
+        const payload = {
+            game_id: parseInt(gameId),
+            date: sessionDate,
+            existing_players: existingPlayers,
+            new_players: newPlayers
+        };
+
+        updateSession(payload);
+    });
+
+    async function updateSession(sessionData) {
+        try {
+            const response = await fetch("{{ request.url_for('update_session', user_id=user.id, session_id=session.id) }}", {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify(sessionData)
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                location.reload();
+            } else {
+                document.getElementById("update-session-msg").textContent = data.error;
+            }
+        } catch (error) {
+            document.getElementById("update-session-msg").textContent = "Error: " + error;
+        }
     }
 </script>
+
 {% endblock %}

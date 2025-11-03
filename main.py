@@ -123,7 +123,6 @@ async def update_player(user_id: int, player_data: dict):
             content={"error": str(e)}
         )
 
-
 @app.delete("/user/{user_id}/player")
 async def delete_player(user_id: int, player_id):
     data_manager.delete_player(player_id)
@@ -136,11 +135,13 @@ async def delete_player(user_id: int, player_id):
 async def session_details(user_id: int, session_id: int, request: Request):
     user = data_manager.get_user_by_id(user_id)
     session = data_manager.get_session_by_id(session_id)
+    games = data_manager.get_all_games(sort = True)
 
     context = {
         "request": request,
         "user": user,
-        "session": session
+        "session": session,
+        "games": games
     }
     return templates.TemplateResponse("session_details.html", context=context)
 
@@ -164,6 +165,32 @@ async def create_session(user_id: int, session: GameSession):
         content={
             "message": "Session successfully created",
         })
+
+
+@app.patch("/user/{user_id}/session/{session_id}")
+async def update_session(user_id: int, session_id: int, session: dict):
+    game_id = int(session.get("game_id"))
+
+    date_splits = session.get("date").split("-")
+    date_value = date(int(date_splits[0]), int(date_splits[1]), int(date_splits[2]))
+
+    players = session.get("existing_players")
+    for player in session.get("new_players"):
+        players.append(player)
+
+    try:
+        data_manager.update_session(session_id, game_id, date_value, players)
+        return JSONResponse(
+            status_code=HTTP_200_OK,
+            content={"message": "Session successfully updated"}
+        )
+    except ValueError as e:
+        return JSONResponse(
+            status_code=HTTP_400_BAD_REQUEST,
+            content={"error": str(e)}
+        )
+
+
 
 @app.delete("/user/{user_id}/session/{session_id}")
 async def delete_session(user_id: int, session_id: int):
