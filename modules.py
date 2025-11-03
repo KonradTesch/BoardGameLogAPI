@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey
 from sqlalchemy.orm import relationship, declarative_base
 
 Base = declarative_base()
@@ -29,15 +29,13 @@ class Game_Session(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     game_id = Column(Integer, ForeignKey('boardgames.id'))
     date = Column(String)
-    winner_id = Column(Integer, ForeignKey('players.id'))
-
-    winner = relationship("Player")
 
 class Session_Player(Base):
     __tablename__ = 'sessions_players'
     session_id = Column(Integer, ForeignKey('sessions.id'), primary_key=True)
     player_id = Column(Integer, ForeignKey('players.id'), primary_key=True)
     score = Column(Integer)
+    winner = Column(Boolean)
 
 
 

@@ -4,7 +4,6 @@ from modules import User, Base, Player, Boardgame, Game_Session, Session_Player
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker, Session
 from dotenv import load_dotenv
-import contextlib
 import os
 
 def setup_database():
@@ -78,14 +77,23 @@ class DataManager:
             games = sorted(games, key=lambda game: game.title)
         return games
 
-    def create_session(self, game_id: int, date: str, players: list, winner: int):
-        new_session = Game_Session(game_id=game_id, date=date, winner_id=winner)
+    def create_session(self, game_id: int, date: str, players: list):
+        new_session = Game_Session(game_id=game_id, date=date)
         session.add(new_session)
         session.commit()
         session.refresh(new_session)
 
         for player in players:
-            player_id = session.query(Player).filter(Player.name == player).first().id
-            new_session_player = Session_Player(session_id= new_session.id,player_id=player_id, score = 0)
+            player_id = player["id"]
+            if session.query(Player).filter(Player.id == player_id).count() == 0:
+                raise Exception(f"Player '{player_id}' does not exist")
+
+            new_session_player = Session_Player(
+                session_id = new_session.id,
+                player_id = player_id,
+                score = player["score"],
+                winner = player["winner"]
+            )
+
             session.add(new_session_player)
             session.commit()

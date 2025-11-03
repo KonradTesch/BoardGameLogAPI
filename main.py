@@ -20,7 +20,7 @@ class User(BaseModel):
 class GameSession(BaseModel):
     boardgame_id: int
     date: str
-    players: list[str]
+    players: list[dict]
 
 
 @app.get("/", response_class=HTMLResponse)
@@ -44,7 +44,7 @@ async def user_home(user_id: int, request: Request):
         "request": request,
         "user": user,
         "global_games": games,
-        "player_names": [player.name for player in user.players]
+        "player_names": [{"id" : player.id, "name": player.name} for player in user.players]
     }
     return templates.TemplateResponse("user_home.html", context=context)
 
@@ -115,7 +115,6 @@ async def create_session(user_id: int, session: GameSession):
         game_id= int(session.boardgame_id),
         date = session.date,
         players=session.players,
-        winner= 1
     )
 
     return JSONResponse(

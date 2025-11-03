@@ -88,6 +88,11 @@
         return currentSelections;
     }
 
+    playerCountInput.addEventListener('input', function() {
+    const count = parseInt(this.value);
+    generatePlayerDropdowns(count);
+    });
+
     function generatePlayerDropdowns(count) {
         const currentSelections = saveCurrentSelections();
         playerSelectionContainer.innerHTML = '';
@@ -96,12 +101,16 @@
             for (let i = 1; i <= count; i++) {
                 const div = document.createElement('div');
                 div.innerHTML = `
-                    <label for="player${i}">Player ${i}:</label>
-                    <select id="player${i}" name="player${i}" required>
+                    <label for="player_select_${i}">Player ${i}:</label>
+                    <select id="player_select_${i}" name="player_select_${i}" required>
                         <option value="">-- Select player --</option>
-                        ${availablePlayers.map(player => `<option value="${player}">${player}</option>`).join('')}
+                        ${availablePlayers.map(player => `<option value="${player.id}">${player.name}</option>`).join('')}
                     </select>
-                    <br><br>
+                    <label for="player_score">Score:</label>
+                    <input type="number" name="player_score_${i}" id="player_score_${i}">
+                    <input type="checkbox" name="player_winner_${i}" id="player_winner_${i}">
+                    <label for="player_winner_${i}">Winner</label>
+                    <br>
                 `;
                 playerSelectionContainer.appendChild(div);
 
@@ -112,21 +121,20 @@
         }
     }
 
-    playerCountInput.addEventListener('input', function() {
-    const count = parseInt(this.value);
-    generatePlayerDropdowns(count);
-    });
-
     document.getElementById("addSession").addEventListener('submit', function(e) {
         e.preventDefault();
 
         const game_id = parseInt(document.getElementById("games_select").value);
-        const date =  document.getElementById("session_date").value.toString()
-        const players = []
+        const date =  document.getElementById("session_date").value.toString();
+        const players = [];
 
         for (let i = 1; i <= playerCountInput.value; i++)
         {
-            players.push(document.getElementById(`player${i}`).value)
+            const id = document.getElementById(`player_select_${i}`).value;
+            const score = document.getElementById(`player_score_${i}`).value;
+            const winner = document.getElementById(`player_winner_${i}`).checked;
+
+            players.push({"id":id, "score":score, "winner":winner });
         }
 
         addSession(game_id, date, players);
