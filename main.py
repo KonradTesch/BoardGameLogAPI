@@ -23,7 +23,7 @@ class GameSession(BaseModel):
 
 
 @app.get("/", response_class=HTMLResponse)
-async def index(request: Request):
+def index(request: Request):
     users = data_manager.get_all_users()
 
 
@@ -35,7 +35,7 @@ async def index(request: Request):
 
 
 @app.get("/user/{user_id}")
-async def user_home(user_id: int, request: Request):
+def user_home(user_id: int, request: Request):
     user = data_manager.get_user_by_id(user_id)
     games = data_manager.get_all_games(sort = True)
 
@@ -50,7 +50,7 @@ async def user_home(user_id: int, request: Request):
 #region User Endpoints
 
 @app.post("/user")
-async def create_user(user_data: User):
+def create_user(user_data: User):
     users = data_manager.get_all_users()
 
     for user in users:
@@ -70,7 +70,7 @@ async def create_user(user_data: User):
     })
 
 @app.patch("/user/{user_id}")
-async def update_user(user_id: int, user_data: User):
+def update_user(user_id: int, user_data: User):
     data_manager.update_user(user_id, user_data.username)
     return JSONResponse( status_code=HTTP_200_OK,
         content={
@@ -80,7 +80,7 @@ async def update_user(user_id: int, user_data: User):
 
 
 @app.delete("/user/{user_id}")
-async def delete_user(user_id: int, request: Request):
+def delete_user(user_id: int, request: Request):
     data_manager.delete_user(user_id)
 
 #endregion Endpoints
@@ -88,7 +88,7 @@ async def delete_user(user_id: int, request: Request):
 #region Player Endpoints
 
 @app.post("/user/{user_id}/player")
-async def create_player(user_id: int,player_name: str):
+def create_player(user_id: int,player_name: str):
     user = data_manager.get_user_by_id(user_id)
     players = user.players
     for player in players:
@@ -107,7 +107,7 @@ async def create_player(user_id: int,player_name: str):
 
 
 @app.patch("/user/{user_id}/player")
-async def update_player(user_id: int, player_data: dict):
+def update_player(user_id: int, player_data: dict):
     player_id = player_data.get("player_id")
     player_name = player_data.get("player_name")
 
@@ -124,7 +124,7 @@ async def update_player(user_id: int, player_data: dict):
         )
 
 @app.delete("/user/{user_id}/player")
-async def delete_player(user_id: int, player_id):
+def delete_player(user_id: int, player_id):
     data_manager.delete_player(player_id)
 
 #endregion
@@ -132,7 +132,7 @@ async def delete_player(user_id: int, player_id):
 #region Session Endpoints
 
 @app.get("/user/{user_id}/session/{session_id}")
-async def session_details(user_id: int, session_id: int, request: Request):
+def session_details(user_id: int, session_id: int, request: Request):
     user = data_manager.get_user_by_id(user_id)
     session = data_manager.get_session_by_id(session_id)
     games = data_manager.get_all_games(sort = True)
@@ -147,7 +147,7 @@ async def session_details(user_id: int, session_id: int, request: Request):
 
 
 @app.post("/user/{user_id}/session")
-async def create_session(user_id: int, session: GameSession):
+def create_session(user_id: int, session: GameSession):
     print(f"game_id: {session.boardgame_id}, user_id: {user_id}, date: {session.date}, players: {session.players}")
 
     date_splits = session.date.split("-")
@@ -168,7 +168,7 @@ async def create_session(user_id: int, session: GameSession):
 
 
 @app.patch("/user/{user_id}/session/{session_id}")
-async def update_session(user_id: int, session_id: int, session: dict):
+def update_session(user_id: int, session_id: int, session: dict):
     game_id = int(session.get("game_id"))
 
     date_splits = session.get("date").split("-")
@@ -193,7 +193,7 @@ async def update_session(user_id: int, session_id: int, session: dict):
 
 
 @app.delete("/user/{user_id}/session/{session_id}")
-async def delete_session(user_id: int, session_id: int):
+def delete_session(user_id: int, session_id: int):
     data_manager.delete_session(session_id)
 
 #endregion
