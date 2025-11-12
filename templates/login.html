@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+
+{% block title %}Boardgame Log API - Login{% endblock %}
+
+{% block content %}
+<h1>Login</h1>
+    
+    <form id="loginForm">
+        <div>
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+        </div>
+        
+        <div>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        
+        <button type="submit">Login</button>
+    </form>
+    
+    <div id="message"></div>
+    
+    <p>No account yet? <a href="/register">Register here</a></p>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', handleLogin)
+
+        async function handleLogin(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const messageDiv = document.getElementById('message');
+            
+            try {
+                const formData = new URLSearchParams();
+                formData.append('username', username);
+                formData.append('password', password);
+                
+                const response = await fetch('/auth/token', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded',
+                    },
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+
+                    const userID = data.user_id;
+                    window.location.href = `/user/${userID}`;
+
+                } else {
+                    messageDiv.textContent = data.detail || 'Login failed';
+                }
+            } catch (error) {
+                messageDiv.textContent = 'An error occurred: ' + error.message;
+            }
+        }
+    </script>
+{% endblock %}

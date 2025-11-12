@@ -2,7 +2,7 @@
 
 {% block title %}Boardgame Log API - User Profile{% endblock %}
 
-{% block header %}Boardgame API - {{ user.name }}{% endblock %}
+{% block header %}Boardgame API - {{ user.username }}{% endblock %}
 {% block nav %}
     <a href="{{ request.url_for('index') }}">Back to Users</a>
 {% endblock %}
@@ -93,7 +93,10 @@
     const availablePlayers = {{ player_names | tojson }};
 
     function deleteUser() {
-        fetch("{{ request.url_for('delete_user', user_id=user.id) }}", {method: "DELETE" })
+        fetch("{{ request.url_for('delete_user', user_id=user.id) }}", {
+            method: "DELETE",
+            credentials: "include"
+        })
            .then(response => {
                if (response.ok) {
                    window.location.href = "{{ request.url_for('index') }}";
@@ -112,7 +115,7 @@
         div.innerHTML = `
                     <form id="rename_user">
                     <label for="new_username">new Username:</label>
-                    <input type="text" name="new_username" id="new_username", value="{{ user.name }}">
+                    <input type="text" name="new_username" id="new_username", value="{{ user.username }}">
                     <button type="submit" class="btn">Rename</button>
                     </form>
                     <p id="rename_msg"></p>
@@ -131,6 +134,7 @@
         try {
             const response = await fetch("{{ request.url_for("update_user", user_id = user.id) }}", {
                 method: "PATCH",
+                credentials: "include",
                 headers: {
                     "Content-Type": "application/json"
                 },
@@ -188,6 +192,7 @@
         try {
             const response = await fetch("{{ request.url_for('update_player', user_id = user.id) }}", {
                 method: "PATCH",
+                credentials: "include",
                 headers: {
                     "Content-Type": "application/json"
                 },
@@ -277,6 +282,7 @@
         {
             const response = await fetch("{{ request.url_for('create_session', user_id = user.id) }}", {
                 method: "POST",
+                credentials: "include",
                 headers: {
                         "Content-Type": "application/json"
                 },
@@ -313,7 +319,10 @@
 
         try
         {
-            const response = await fetch("{{ request.url_for('create_player', user_id = user.id) }}" + "?player_name=" + playerName, {method: "POST"});
+            const response = await fetch("{{ request.url_for('create_player', user_id = user.id) }}" + "?player_name=" + playerName, {
+                method: "POST",
+                credentials: "include"
+            });
 
             const data = await response.json();
 
@@ -334,7 +343,10 @@
     }
 
     async function deletePlayer(playerID) {
-        fetch("{{request.url_for('delete_player', user_id=user.id) }}" + "?player_id=" + playerID, {method: "DELETE"})
+        fetch("{{request.url_for('delete_player', user_id=user.id) }}" + "?player_id=" + playerID, {
+            method: "DELETE",
+            credentials: "include"
+        })
             .then(response => {
                 if (response.ok) {
                     location.reload();

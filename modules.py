@@ -6,7 +6,8 @@ Base = declarative_base()
 class User(Base):
     __tablename__ = 'users'
     id = Column(Integer, primary_key=True, autoincrement=True)
-    name = Column(String)
+    username = Column(String, unique=True)
+    hashed_password = Column(String)
 
     players = relationship('Player', back_populates='user')
     sessions = relationship('Game_Session', back_populates='user')

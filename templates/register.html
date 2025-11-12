@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+
+{% block title %}Boardgame Log API - Login{% endblock %}
+
+{% block content %}
+    <h1>Register</h1>
+    
+    <form id="registerForm">
+        <div>
+            <label for="username">Username:</label>
+            <input type="text" id="username" name="username" required>
+        </div>
+        
+        <div>
+            <label for="password">Password:</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        
+        <div>
+            <label for="confirmPassword">Confirm Password:</label>
+            <input type="password" id="confirmPassword" name="confirmPassword" required>
+        </div>
+        
+        <button type="submit">Register</button>
+    </form>
+    
+    <div id="message"></div>
+    
+    <p>Already have an account? <a href="/login">Login here</a></p>
+
+    <script>
+        document.getElementById('registerForm').addEventListener('submit', handleRegister)
+
+        async function handleRegister(e) {
+            e.preventDefault();
+            
+            const username = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const confirmPassword = document.getElementById('confirmPassword').value;
+            const messageDiv = document.getElementById('message');
+            
+            if (password !== confirmPassword) {
+                messageDiv.textContent = 'Passwords do not match!';
+                return;
+            }
+            
+            try {
+                const response = await fetch('/auth/', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        username: username,
+                        password: password
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    messageDiv.textContent = 'Registration successful! Redirecting to login...';
+                    setTimeout(() => {
+                        window.location.href = '/login';
+                    }, 30);
+                } else {
+                    messageDiv.textContent = data.detail || 'Registration failed';
+                }
+            } catch (error) {
+                messageDiv.textContent = 'An error occurred: ' + error.message;
+            }
+        }
+    </script>
+{% endblock %}

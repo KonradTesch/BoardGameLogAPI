@@ -2,6 +2,8 @@ from datetime import date
 from modules import User, Base, Player, Boardgame, Game_Session, Session_Player
 from sqlalchemy import create_engine, text,inspect
 from sqlalchemy.orm import sessionmaker
+from fastapi import HTTPException, status
+from passlib.context import CryptContext
 from dotenv import load_dotenv
 import os
 
@@ -18,30 +20,46 @@ session = SessionLocal()
 
 setup_database()
 
+bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 class DataManager:
 
     def __init__(self):
         pass
 
-    def create_user(self, name: str):
-        new_user = User(name=name)
+    def create_user(self, username: str, password: str):
+        user = session.query(User).filter(User.username == username).first()
+        if user:
+            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Username already exists")
+
+        new_user = User(
+            username=username,
+            hashed_password=bcrypt_context.hash(password))
         session.add(new_user)
         session.commit()
 
+        return new_user
+
+    def authenticate_user(self, username: str, password: str):
+        user = session.query(User).filter(User.username == username).first()
+
+        if not user:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        if not bcrypt_context.verify(password, str(user.hashed_password)):
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect password")
+
+        return user
+
     def update_user(self, user_id: int, new_username: str):
         user = session.query(User).filter(User.id == user_id).first()
-        user.name = new_username
+        user.username = new_username
         session.commit()
 
-    def delete_user(self, index: int):
-        user_to_delete = session.query(User).filter(User.id == index).first
-        if user_to_delete:
-            session.delete(user_to_delete)
-            session.commit()
-            return True
+    def delete_user(self, user_id: int):
+        user_to_delete = self.validate_user(user_id)
 
-        return False
+        session.delete(user_to_delete)
+        session.commit()
 
     def validate_user(self, user_id:int):
         user = session.query(User).filter(User.id == user_id).first()

@@ -1,13 +1,18 @@
 from datetime import date
+from http.client import HTTPException
+
 import uvicorn
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, Depends, HTTPException, status
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from pydantic import BaseModel
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_201_CREATED, HTTP_200_OK
+from typing import Annotated
 from db_manager import DataManager
+import auth
 
 app = FastAPI()
+app.include_router(auth.router)
 
 templates = Jinja2Templates(directory="templates")
 
@@ -21,21 +26,36 @@ class GameSession(BaseModel):
     date: str
     players: list[dict]
 
+user_dependency = Annotated[dict, Depends(auth.get_current_user)]
 
-@app.get("/", response_class=HTMLResponse)
-def index(request: Request):
-    users = data_manager.get_all_users()
+def check_user(user_id: int, current_user):
+    if current_user["id"] != user_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You can only access your own data.",
+        )
 
 
-    context = {
-        "request": request,
-        "users": users
-    }
-    return templates.TemplateResponse("index.html", context=context)
+
+@app.get("/", response_class=RedirectResponse)
+def index():
+    return RedirectResponse("/login")
+
+
+@app.get("/register", response_class=HTMLResponse)
+def register(request: Request):
+    return templates.TemplateResponse("register.html", context={"request": request})
+
+
+@app.get("/login", response_class=HTMLResponse)
+def login(request: Request):
+    return templates.TemplateResponse("login.html", context={"request": request})
 
 
 @app.get("/user/{user_id}")
-def user_home(user_id: int, request: Request):
+def user_home(user_id: int, request: Request, current_user: user_dependency):
+    check_user(user_id, current_user)
+
     user = data_manager.get_user_by_id(user_id)
     games = data_manager.get_all_games(sort = True)
 
@@ -49,28 +69,10 @@ def user_home(user_id: int, request: Request):
 
 #region User Endpoints
 
-@app.post("/user")
-def create_user(user_data: User):
-    users = data_manager.get_all_users()
-
-    for user in users:
-        if user.name == user_data.username:
-            return JSONResponse(
-                status_code=HTTP_400_BAD_REQUEST,
-                content={"error": "User exists already"}
-            )
-
-    data_manager.create_user(user_data.username)
-
-    return JSONResponse(
-        status_code=HTTP_201_CREATED,
-        content={
-        "message": "User successfully created",
-        "username": user_data.username
-    })
-
 @app.patch("/user/{user_id}")
-def update_user(user_id: int, user_data: User):
+def update_user(user_id: int, user_data: User, current_user: user_dependency):
+    check_user(user_id, current_user)
+
     data_manager.update_user(user_id, user_data.username)
     return JSONResponse( status_code=HTTP_200_OK,
         content={
@@ -80,7 +82,9 @@ def update_user(user_id: int, user_data: User):
 
 
 @app.delete("/user/{user_id}")
-def delete_user(user_id: int, request: Request):
+def delete_user(user_id: int, current_user: user_dependency):
+    check_user(user_id, current_user)
+
     data_manager.delete_user(user_id)
 
 #endregion Endpoints
@@ -88,7 +92,9 @@ def delete_user(user_id: int, request: Request):
 #region Player Endpoints
 
 @app.post("/user/{user_id}/player")
-def create_player(user_id: int,player_name: str):
+def create_player(user_id: int,player_name: str, current_user: user_dependency):
+    check_user(user_id, current_user)
+
     user = data_manager.get_user_by_id(user_id)
     players = user.players
     for player in players:
@@ -107,7 +113,9 @@ def create_player(user_id: int,player_name: str):
 
 
 @app.patch("/user/{user_id}/player")
-def update_player(user_id: int, player_data: dict):
+def update_player(user_id: int, player_data: dict, current_user: user_dependency):
+    check_user(user_id, current_user)
+
     player_id = player_data.get("player_id")
     player_name = player_data.get("player_name")
 
@@ -124,7 +132,9 @@ def update_player(user_id: int, player_data: dict):
         )
 
 @app.delete("/user/{user_id}/player")
-def delete_player(user_id: int, player_id):
+def delete_player(user_id: int, player_id, current_user: user_dependency):
+    check_user(user_id, current_user)
+
     data_manager.delete_player(player_id)
 
 #endregion
@@ -132,7 +142,9 @@ def delete_player(user_id: int, player_id):
 #region Session Endpoints
 
 @app.get("/user/{user_id}/session/{session_id}")
-def session_details(user_id: int, session_id: int, request: Request):
+def session_details(user_id: int, session_id: int, request: Request, current_user: user_dependency):
+    check_user(user_id, current_user)
+
     user = data_manager.get_user_by_id(user_id)
     session = data_manager.get_session_by_id(session_id)
     games = data_manager.get_all_games(sort = True)
@@ -147,7 +159,9 @@ def session_details(user_id: int, session_id: int, request: Request):
 
 
 @app.post("/user/{user_id}/session")
-def create_session(user_id: int, session: GameSession):
+def create_session(user_id: int, session: GameSession,current_user: user_dependency):
+    check_user(user_id, current_user)
+
     print(f"game_id: {session.boardgame_id}, user_id: {user_id}, date: {session.date}, players: {session.players}")
 
     date_splits = session.date.split("-")
@@ -168,7 +182,9 @@ def create_session(user_id: int, session: GameSession):
 
 
 @app.patch("/user/{user_id}/session/{session_id}")
-def update_session(user_id: int, session_id: int, session: dict):
+def update_session(user_id: int, session_id: int, session: dict, current_user: user_dependency):
+    check_user(user_id, current_user)
+
     game_id = int(session.get("game_id"))
 
     date_splits = session.get("date").split("-")
@@ -193,7 +209,9 @@ def update_session(user_id: int, session_id: int, session: dict):
 
 
 @app.delete("/user/{user_id}/session/{session_id}")
-def delete_session(user_id: int, session_id: int):
+def delete_session(user_id: int, session_id: int, current_user: user_dependency):
+    check_user(user_id, current_user)
+
     data_manager.delete_session(session_id)
 
 #endregion
