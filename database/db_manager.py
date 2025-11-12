@@ -1,6 +1,6 @@
 from datetime import date
-from modules import User, Base, Player, Boardgame, Game_Session, Session_Player
-from sqlalchemy import create_engine, text,inspect
+from BoardGameLogAPI.models import User, Base, Player, Boardgame, Game_Session, Session_Player
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from fastapi import HTTPException, status
 from passlib.context import CryptContext
@@ -22,8 +22,7 @@ setup_database()
 
 bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
-class DataManager:
-
+class UserDataManager:
     def __init__(self):
         pass
 
@@ -77,6 +76,8 @@ class DataManager:
 
         return user
 
+
+class PlayerDataManager:
     def create_player(self, user:User, player_name:str):
         new_player = Player(name=player_name, user_id=user.id)
         session.add(new_player)
@@ -95,7 +96,13 @@ class DataManager:
         return player
 
     def update_player(self, user_id: int, player_id: int, new_name: str):
-        user = self.validate_user(user_id)
+        user = session.query(User).filter(User.id == user_id).first()
+
+        if not user:
+            raise (HTTPException(
+                status_code=status.HTTP_404_NOT_FOUND,
+                detail="User not found")
+            )
 
         for player in user.players:
             if player.id != player_id and player.name == new_name:
@@ -142,6 +149,9 @@ class DataManager:
                         )
 
         return player_games
+
+
+class GameDataManager:
 
     def create_game(self, game_title: str,min_players: int, max_players:int ):
         new_game = Boardgame(title=game_title, min_players=min_players, max_players=max_players)
@@ -196,7 +206,6 @@ class DataManager:
 
         for player in players:
             player_id = player["player_id"]
-            self.validate_player(player_id)
 
             session_player = session.query(Session_Player).filter(Session_Player.session_id == game_session.id).filter(Session_Player.player_id == player_id).first()
 
@@ -253,3 +262,10 @@ class DataManager:
                         )
 
         return user_games
+
+
+pass
+
+
+
+

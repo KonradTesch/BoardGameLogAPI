@@ -1,0 +1,50 @@
+from fastapi import APIRouter, Depends, Response
+from fastapi.security import OAuth2PasswordRequestForm
+from pydantic import BaseModel
+from starlette import status
+from BoardGameLogAPI.database.db_manager import UserDataManager
+from dotenv import load_dotenv
+from os import getenv
+from BoardGameLogAPI.logic.auth_logic import create_access_token
+
+router = APIRouter(
+    prefix="/auth",
+    tags=["auth"]
+)
+
+load_dotenv()
+SECRET_KEY = getenv("SECRET_KEY")
+ALGORITHM = getenv("ALGORITHM")
+
+class CreateUserRequest(BaseModel):
+    username: str
+    password: str
+
+
+user_manager = UserDataManager()
+
+@router.post("/", status_code=status.HTTP_201_CREATED)
+async def create_user(create_user_request: CreateUserRequest):
+    created_user = user_manager.create_user(create_user_request.username, create_user_request.password)
+    return {"username": created_user.username}
+
+@router.post("/token")
+async def login_for_access_token(response: Response, form_data: OAuth2PasswordRequestForm = Depends()):
+    user = user_manager.authenticate_user(form_data.username, form_data.password)
+
+    token = create_access_token(user.username, user.id)
+
+    response.set_cookie(
+        key="access_token",
+        value=token,
+        httponly=True,
+        secure=False,
+        samesite="lax"
+    )
+
+    return {"message": "Login successful", "user_id": user.id}
+
+
+
+
+
