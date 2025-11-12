@@ -77,7 +77,6 @@ class DataManager:
 
         return user
 
-
     def create_player(self, user:User, player_name:str):
         new_player = Player(name=player_name, user_id=user.id)
         session.add(new_player)
@@ -89,6 +88,10 @@ class DataManager:
         if not player:
             raise ValueError("Player not found")
 
+        return player
+
+    def get_player_by_id(self, player_id: int):
+        player = self.validate_player(player_id)
         return player
 
     def update_player(self, user_id: int, player_id: int, new_name: str):
@@ -103,7 +106,6 @@ class DataManager:
         player.name = new_name
         session.commit()
 
-
     def delete_player(self, player_id: int):
         player_to_delete = session.query(Player).filter(Player.id == player_id)
         if player_to_delete:
@@ -111,6 +113,35 @@ class DataManager:
             session.commit()
             return True
         return False
+
+    def get_player_scores_for_game(self, player_id: int, game_id: int):
+        player_scores = (session.query(Session_Player)
+                         .join(Session_Player.session)
+                         .filter(Session_Player.player_id == player_id)
+                         .filter(Game_Session.game_id == game_id)
+                         .all()
+                         )
+
+        return player_scores
+
+    def get_player_scores_all(self, player_id: int):
+        player_scores = (session.query(Session_Player)
+                         .filter(Session_Player.player_id == player_id)
+                         .all()
+                         )
+
+        return player_scores
+
+    def get_player_games(self, player_id: int):
+        player_games = (session.query(Boardgame)
+                        .join(Game_Session, Boardgame.sessions)
+                        .join(Session_Player, Game_Session.session_players)
+                        .filter(Session_Player.player_id == player_id)
+                        .distinct()
+                        .all()
+                        )
+
+        return player_games
 
     def create_game(self, game_title: str,min_players: int, max_players:int ):
         new_game = Boardgame(title=game_title, min_players=min_players, max_players=max_players)
@@ -184,8 +215,6 @@ class DataManager:
 
             session.commit()
 
-
-
     def delete_session(self, session_id: int):
         session_to_delete = session.query(Game_Session).filter(Game_Session.id == session_id).first()
         if session_to_delete:
@@ -197,3 +226,30 @@ class DataManager:
     def get_session_by_id(self, session_id: int):
         game_session = session.query(Game_Session).filter(Game_Session.id == session_id).first()
         return game_session
+
+    def get_user_game_session_by_game(self, user_id, game_id):
+        game_sessions = (session.query(Game_Session)
+                      .filter(Game_Session.game_id == game_id)
+                      .filter(Game_Session.user_id == user_id)
+                      .all()
+                         )
+
+        return game_sessions
+
+    def get_user_game_sessions_all(self, user_id):
+        game_sessions = (session.query(Game_Session)
+                         .filter(Game_Session.user_id == user_id)
+                         .all()
+                         )
+
+        return game_sessions
+
+    def get_user_games(self, user_id):
+        user_games = (session.query(Boardgame)
+                        .join(Boardgame.sessions)
+                        .filter(Game_Session.user_id == user_id)
+                        .distinct()
+                        .all()
+                        )
+
+        return user_games
