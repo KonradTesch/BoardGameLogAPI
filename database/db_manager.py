@@ -64,7 +64,7 @@ class UserDataManager:
         user = session.query(User).filter(User.id == user_id).first()
 
         if not user:
-            raise ValueError("User not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
         return user
 
@@ -87,7 +87,7 @@ class PlayerDataManager:
         player = session.query(Player).filter(Player.id == player_id).first()
 
         if not player:
-            raise ValueError("Player not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
 
         return player
 
@@ -99,14 +99,13 @@ class PlayerDataManager:
         user = session.query(User).filter(User.id == user_id).first()
 
         if not user:
-            raise (HTTPException(
+            raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
                 detail="User not found")
-            )
 
         for player in user.players:
             if player.id != player_id and player.name == new_name:
-                raise ValueError(f"Player {new_name} already exists")
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Player name already exists")
 
         player = self.validate_player(player_id)
 
@@ -177,7 +176,7 @@ class GameDataManager:
         for player in players:
             player_id = player["id"]
             if session.query(Player).filter(Player.id == player_id).count() == 0:
-                raise Exception(f"Player '{player_id}' does not exist")
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
 
             new_session_player = Session_Player(
                 session_id = new_session.id,
@@ -193,7 +192,7 @@ class GameDataManager:
         game_session = session.query(Game_Session).filter(Game_Session.id == session_id).first()
 
         if not game_session:
-            raise ValueError("Game session not found")
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Game Session not found")
 
         return game_session
 
