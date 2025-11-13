@@ -49,9 +49,22 @@ class UserDataManager:
 
         return user
 
-    def update_user(self, user_id: int, new_username: str):
+    def update_username(self, user_id: int, new_username: str):
         user = session.query(User).filter(User.id == user_id).first()
         user.username = new_username
+        session.commit()
+
+    def change_password(self, user_id: int, old_password: str, new_password: str):
+        current_user = self.validate_user(user_id)
+
+        if not bcrypt_context.verify(old_password, str(current_user.hashed_password)):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Old password is incorrect"
+            )
+
+        # Hash das neue Passwort und speichere es
+        current_user.hashed_password = bcrypt_context.hash(new_password)
         session.commit()
 
     def delete_user(self, user_id: int):

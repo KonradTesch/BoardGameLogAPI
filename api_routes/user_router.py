@@ -1,7 +1,6 @@
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Request, Depends, status, HTTPException
 from fastapi.templating import Jinja2Templates
-from fastapi.responses import JSONResponse
-from starlette.status import HTTP_200_OK
+from fastapi.responses import JSONResponse, Response
 from typing import Annotated
 from pydantic import BaseModel
 from BoardGameLogAPI.database.db_manager import UserDataManager, GameDataManager
@@ -41,15 +40,32 @@ def user_home(user_id: int, request: Request, current_user: user_dependency):
 
 
 @router.patch("/{user_id}")
-def update_user(user_id: int, user_data: User, current_user: user_dependency):
+def update_username(user_id: int, user_data: dict, current_user: user_dependency):
     check_user(user_id, current_user)
 
-    user_manager.update_user(user_id, user_data.username)
-    return JSONResponse( status_code=HTTP_200_OK,
+    user_manager.update_username(user_id, user_data["username"])
+    return JSONResponse( status_code=status.HTTP_200_OK,
         content={
-        "message": "User successfully updated",
-        "username": user_data.username
+        "message": "Username successfully updated",
     })
+
+@router.patch("/{user_id}/password")
+def change_password(user_id: int, password_data: dict, current_user: user_dependency):
+    check_user(user_id, current_user)
+
+    user_manager.change_password(
+        user_id,
+        password_data["old_password"],
+        password_data["new_password"]
+    )
+
+    return JSONResponse(
+        status_code=status.HTTP_200_OK,
+        content={
+            "message": "Password successfully changed"
+        }
+    )
+
 
 
 @router.delete("/{user_id}")
@@ -57,3 +73,15 @@ def delete_user(user_id: int, current_user: user_dependency):
     check_user(user_id, current_user)
 
     user_manager.delete_user(user_id)
+
+
+@router.post("/{user_id}/logout")
+def logout(user_id: int, response: Response, current_user: user_dependency):
+    check_user(user_id, current_user)
+
+    response.delete_cookie(
+        key="access_token",
+        httponly=True,
+        secure=False,
+        samesite="lax"
+    )
