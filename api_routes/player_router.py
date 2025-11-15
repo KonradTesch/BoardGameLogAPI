@@ -6,7 +6,7 @@ from typing import Annotated
 from BoardGameLogAPI.repositories.db_manager import PlayerDataManager, UserDataManager
 from BoardGameLogAPI.service.auth_logic import get_current_user
 from .index_router import check_user
-from ..custom_exceptions import NotFoundException, UnprocessableException
+from BoardGameLogAPI.custom_exceptions import NotFoundException, UnprocessableException
 
 router = APIRouter(
     prefix="/user/{user_id}/player",

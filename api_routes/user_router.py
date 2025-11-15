@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from BoardGameLogAPI.repositories.db_manager import UserDataManager, GameDataManager
 from BoardGameLogAPI.service.auth_logic import get_current_user
 from .index_router import check_user
-from ..custom_exceptions import UnauthorizedException, NotFoundException
+from BoardGameLogAPI.custom_exceptions import UnauthorizedException, NotFoundException
 
 router = APIRouter(
     prefix="/user",

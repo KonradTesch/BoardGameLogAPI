@@ -8,7 +8,7 @@ from typing import Annotated
 from BoardGameLogAPI.repositories.db_manager import GameDataManager, UserDataManager
 from BoardGameLogAPI.service.auth_logic import get_current_user
 from .index_router import check_user
-from ..custom_exceptions import NotFoundException
+from BoardGameLogAPI.custom_exceptions import NotFoundException
 
 router = APIRouter(
     prefix="/user{user_id}/session",
