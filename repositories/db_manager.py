@@ -2,10 +2,10 @@ from datetime import date
 from BoardGameLogAPI.models import User, Base, Player, Boardgame, Game_Session, Session_Player
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from fastapi import HTTPException, status
 from passlib.context import CryptContext
 from dotenv import load_dotenv
 import os
+from BoardGameLogAPI.custom_exceptions import NotFoundException, UnauthorizedException, UnprocessableException
 
 def setup_database():
     Base.metadata.create_all(bind=engine)
@@ -29,7 +29,7 @@ class UserDataManager:
     def create_user(self, username: str, password: str):
         user = session.query(User).filter(User.username == username).first()
         if user:
-            raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Username already exists")
+            raise UnprocessableException(f"Username '{username}' already exists")
 
         new_user = User(
             username=username,
@@ -43,9 +43,9 @@ class UserDataManager:
         user = session.query(User).filter(User.username == username).first()
 
         if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+            raise NotFoundException(f"Username '{username}' not found")
         if not bcrypt_context.verify(password, str(user.hashed_password)):
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Incorrect password")
+            raise UnauthorizedException("Incorrect password")
 
         return user
 
@@ -58,12 +58,9 @@ class UserDataManager:
         current_user = self.validate_user(user_id)
 
         if not bcrypt_context.verify(old_password, str(current_user.hashed_password)):
-            raise HTTPException(
-                status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Old password is incorrect"
-            )
+            raise UnauthorizedException("Old password is incorrect.")
 
-        # Hash das neue Passwort und speichere es
+        # Hash and save the new password
         current_user.hashed_password = bcrypt_context.hash(new_password)
         session.commit()
 
@@ -77,7 +74,7 @@ class UserDataManager:
         user = session.query(User).filter(User.id == user_id).first()
 
         if not user:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+            raise NotFoundException("User not found")
 
         return user
 
@@ -100,7 +97,7 @@ class PlayerDataManager:
         player = session.query(Player).filter(Player.id == player_id).first()
 
         if not player:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
+            raise NotFoundException("Player not found")
 
         return player
 
@@ -112,13 +109,11 @@ class PlayerDataManager:
         user = session.query(User).filter(User.id == user_id).first()
 
         if not user:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail="User not found")
+            raise NotFoundException("User not found")
 
         for player in user.players:
             if player.id != player_id and player.name == new_name:
-                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail="Player name already exists")
+                raise UnprocessableException(f"Player name '{player.name}' already exists")
 
         player = self.validate_player(player_id)
 
@@ -189,7 +184,7 @@ class GameDataManager:
         for player in players:
             player_id = player["id"]
             if session.query(Player).filter(Player.id == player_id).count() == 0:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Player not found")
+                raise NotFoundException("Player not found")
 
             new_session_player = Session_Player(
                 session_id = new_session.id,
@@ -205,7 +200,7 @@ class GameDataManager:
         game_session = session.query(Game_Session).filter(Game_Session.id == session_id).first()
 
         if not game_session:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Game Session not found")
+            raise NotFoundException("Game Session not found")
 
         return game_session
 

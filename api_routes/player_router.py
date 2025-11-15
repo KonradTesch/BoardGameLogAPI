@@ -1,11 +1,12 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_201_CREATED, HTTP_200_OK
 from typing import Annotated
-from BoardGameLogAPI.database.db_manager import PlayerDataManager, UserDataManager
-from BoardGameLogAPI.logic.auth_logic import get_current_user
+from BoardGameLogAPI.repositories.db_manager import PlayerDataManager, UserDataManager
+from BoardGameLogAPI.service.auth_logic import get_current_user
 from .index_router import check_user
+from ..custom_exceptions import NotFoundException, UnprocessableException
 
 router = APIRouter(
     prefix="/user/{user_id}/player",
@@ -53,15 +54,17 @@ def update_player(user_id: int, player_data: dict, current_user: user_dependency
             status_code=HTTP_200_OK,
             content={"message": "Player successfully updated"}
         )
-    except ValueError as e:
-        return JSONResponse(
-            status_code=HTTP_400_BAD_REQUEST,
-            content={"error": str(e)}
-        )
+    except NotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except UnprocessableException as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(e))
 
 
 @router.delete("/")
 def delete_player(user_id: int, player_id, current_user: user_dependency):
-    check_user(user_id, current_user)
+    try:
+        check_user(user_id, current_user)
 
-    player_manager.delete_player(player_id)
+        player_manager.delete_player(player_id)
+    except NotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

@@ -1,13 +1,14 @@
 from datetime import date
-from fastapi import APIRouter, Request, Depends
+from fastapi import APIRouter, Request, Depends, HTTPException, status
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_201_CREATED, HTTP_200_OK
 from typing import Annotated
-from BoardGameLogAPI.database.db_manager import GameDataManager, UserDataManager
-from BoardGameLogAPI.logic.auth_logic import get_current_user
+from BoardGameLogAPI.repositories.db_manager import GameDataManager, UserDataManager
+from BoardGameLogAPI.service.auth_logic import get_current_user
 from .index_router import check_user
+from ..custom_exceptions import NotFoundException
 
 router = APIRouter(
     prefix="/user{user_id}/session",
@@ -47,23 +48,24 @@ def session_details(user_id: int, session_id: int, request: Request, current_use
 def create_session(user_id: int, session: GameSession,current_user: user_dependency):
     check_user(user_id, current_user)
 
-    print(f"game_id: {session.boardgame_id}, user_id: {user_id}, date: {session.date}, players: {session.players}")
+    try:
+        date_splits = session.date.split("-")
+        date_value = date(int(date_splits[0]), int(date_splits[1]), int(date_splits[2]))
 
-    date_splits = session.date.split("-")
-    date_value = date(int(date_splits[0]), int(date_splits[1]), int(date_splits[2]))
+        game_manager.create_session(
+            game_id= int(session.boardgame_id),
+            user_id = user_id,
+            date_value = date_value,
+            players=session.players,
+        )
 
-    game_manager.create_session(
-        game_id= int(session.boardgame_id),
-        user_id = user_id,
-        date_value = date_value,
-        players=session.players,
-    )
-
-    return JSONResponse(
-        status_code=HTTP_201_CREATED,
-        content={
-            "message": "Session successfully created",
-        })
+        return JSONResponse(
+            status_code=HTTP_201_CREATED,
+            content={
+                "message": "Session successfully created",
+            })
+    except NotFoundException as e:
+        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
 @router.patch("/{session_id}")
@@ -85,11 +87,8 @@ def update_session(user_id: int, session_id: int, session: dict, current_user: u
             status_code=HTTP_200_OK,
             content={"message": "Session successfully updated"}
         )
-    except ValueError as e:
-        return JSONResponse(
-            status_code=HTTP_400_BAD_REQUEST,
-            content={"error": str(e)}
-        )
+    except NotFoundException as e:
+        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
 @router.delete("/{session_id}")
