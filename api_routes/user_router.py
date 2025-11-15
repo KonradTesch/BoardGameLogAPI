@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Request, Depends, status, HTTPException
+from fastapi import APIRouter, Request, Depends, status, HTTPException, Cookie
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse, Response
 from typing import Annotated
@@ -18,7 +18,14 @@ templates = Jinja2Templates(directory="templates")
 user_manager = UserDataManager()
 game_manager = GameDataManager()
 
-user_dependency = Annotated[dict, Depends(get_current_user)]
+def get_user(access_token: str = Cookie(None)):
+    try:
+        return get_current_user(access_token)
+
+    except UnauthorizedException as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail=str(e))
+
+user_dependency = Annotated[dict, Depends(get_user)]
 
 class User(BaseModel):
     username: str

@@ -1,4 +1,4 @@
-from fastapi import  HTTPException, Cookie, status
+from fastapi import Cookie
 from jose import jwt, JWTError
 from dotenv import load_dotenv
 from os import getenv

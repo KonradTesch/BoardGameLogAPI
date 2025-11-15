@@ -4,11 +4,10 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_201_CREATED, HTTP_200_OK
-from typing import Annotated
 from BoardGameLogAPI.repositories.db_manager import GameDataManager, UserDataManager
-from BoardGameLogAPI.service.auth_logic import get_current_user
 from .index_router import check_user
 from BoardGameLogAPI.custom_exceptions import NotFoundException
+from .user_router import user_dependency
 
 router = APIRouter(
     prefix="/user{user_id}/session",
@@ -20,7 +19,6 @@ templates = Jinja2Templates(directory="templates")
 game_manager = GameDataManager()
 user_manager = UserDataManager()
 
-user_dependency = Annotated[dict, Depends(get_current_user)]
 
 class GameSession(BaseModel):
     boardgame_id: int

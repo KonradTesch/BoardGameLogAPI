@@ -2,11 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_201_CREATED, HTTP_200_OK
-from typing import Annotated
 from BoardGameLogAPI.repositories.db_manager import PlayerDataManager, UserDataManager
-from BoardGameLogAPI.service.auth_logic import get_current_user
 from .index_router import check_user
 from BoardGameLogAPI.custom_exceptions import NotFoundException, UnprocessableException
+from .user_router import user_dependency
 
 router = APIRouter(
     prefix="/user/{user_id}/player",
@@ -18,7 +17,6 @@ templates = Jinja2Templates(directory="templates")
 player_manager = PlayerDataManager()
 user_manager = UserDataManager()
 
-user_dependency = Annotated[dict, Depends(get_current_user)]
 
 @router.post("/")
 def create_player(user_id: int,player_name: str, current_user: user_dependency):
