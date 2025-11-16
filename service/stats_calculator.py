@@ -4,6 +4,11 @@ user_manager = UserDataManager()
 player_manager = PlayerDataManager()
 game_manager = GameDataManager()
 
+def get_player_session_count(player_id, game_id):
+    session_count = len(player_manager.get_player_scores_for_game(player_id, game_id))
+    return session_count
+
+
 def get_player_game_wins(player_id, game_id):
     scores = player_manager.get_player_scores_for_game(player_id, game_id)
 
@@ -16,7 +21,7 @@ def get_player_game_wins(player_id, game_id):
 
     percentage = wins / plays * 100
 
-    return wins, percentage
+    return wins, round(percentage, 2)
 
 
 def get_total_player_wins(player_id):
@@ -31,7 +36,7 @@ def get_total_player_wins(player_id):
 
     percentage = wins / plays * 100
 
-    return wins, percentage
+    return wins, round(percentage, 2)
 
 
 def get_average_player_score(player_id, game_id):
@@ -44,17 +49,17 @@ def get_average_player_score(player_id, game_id):
 
     average = total_score / len(scores)
 
-    return average
+    return round(average, 2)
 
 
 def get_best_player_score(player_id, game_id):
     scores = player_manager.get_player_scores_for_game(player_id, game_id)
 
-    best_score = scores[0]
+    best_score = scores[0].score
 
     for score in scores:
-        if score.score > best_score.score:
-            best_score = score
+        if score.score > best_score:
+            best_score = score.score
 
     return best_score
 
@@ -66,13 +71,14 @@ def get_player_stats(player_id):
 
     total["wins"], total ["win_rate"] = get_total_player_wins(player_id)
 
-    player_stats["total"] = total
+    player_stats["Total"] = total
 
     player_games = player_manager.get_player_games(player_id)
 
     for game in player_games:
         game_stats = {}
 
+        game_stats["session_count"] = get_player_session_count(player_id, game.id)
         game_stats["wins"], game_stats["win_rate"] = get_player_game_wins(player_id, game.id)
         game_stats["avg_score"] = get_average_player_score(player_id, game.id)
         game_stats["best_score"] = get_best_player_score(player_id, game.id)
@@ -107,7 +113,7 @@ def get_game_stats(user_id):
 
     total["session_count"] = len(total_sessions)
 
-    user_game_stats["total"] = total
+    user_game_stats["All Games"] = total
 
     games = game_manager.get_user_games(user_id)
 

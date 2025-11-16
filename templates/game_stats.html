@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block title %}Boardgame Log API - Game Stats{% endblock %}
+
+{% block nav %}
+    <a href="{{ request.url_for('user_home', user_id = user.id) }}">Back to User Home</a>
+{% endblock %}
+
+
+{% block content %}
+<h1>Game Stats</h1>
+    {% for title, stats in game_stats.items()  %}
+    <h2>{{ title }}</h2>
+    {% if title == "All Games" %}
+        <p>Count of all Sessions: {{ stats.session_count }}</p>
+    {% else %}
+        <p>Session Count: {{ stats.session_count }}</p>
+        <p>Best Score: {{ stats.best_score }}  (by {{ stats.best_player }})</p>
+    {% endif %}
+    {% endfor %}
+{%  endblock %}

@@ -1,10 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, HTTPException, status, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_201_CREATED, HTTP_200_OK
 from BoardGameLogAPI.repositories.db_manager import PlayerDataManager, UserDataManager
 from .index_router import check_user
 from BoardGameLogAPI.custom_exceptions import NotFoundException, UnprocessableException
+from BoardGameLogAPI.service.stats_calculator import get_player_stats
 from .user_router import user_dependency
 
 router = APIRouter(
@@ -64,5 +65,24 @@ def delete_player(user_id: int, player_id, current_user: user_dependency):
         check_user(user_id, current_user)
 
         player_manager.delete_player(player_id)
+    except NotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+
+@router.get("/{player_id}/stats")
+def show_player_stats(user_id: int, player_id: int, request: Request, current_user: user_dependency):
+    check_user(user_id, current_user)
+    try:
+        player = player_manager.get_player_by_id(player_id)
+        player_stats = get_player_stats(player_id)
+
+        context= {
+            "request": request,
+            "user": current_user,
+            "player": player,
+            "player_stats": player_stats
+        }
+
+        return templates.TemplateResponse("player_stats.html", context)
     except NotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

@@ -4,7 +4,7 @@
 
 {% block header %}Boardgame API - {{ user.username }}{% endblock %}
 {% block nav %}
-    <a href="{{ request.url_for('index') }}">Back to Users</a>
+    <button class="btn" onclick="logout()">Logout</button>
 {% endblock %}
 
 
@@ -13,7 +13,6 @@
 <button class="btn-delete" onclick="deleteUser()">Delete User</button>
 <button class="btn-edit" onclick="generateRenameUserSection()">Rename User</button>
 <button class="btn-edit" onclick="generateChangePasswordSection()">Change Password</button>
-<button class="btn" onclick="logout()">Logout</button>
 <div id="rename-user-container"></div>
 <div id="change-password-container"></div>
 
@@ -32,6 +31,10 @@
         <li>No sessions yet</li>
     {%  endfor %}
     </ul>
+    <a href="{{ request.url_for('user_game_stats', user_id = user.id) }}">
+        <button class="btn">Show Game Stats</button>
+    </a>
+
 
 <h2>Add Game Session</h2>
 <form id="addSession">
@@ -73,6 +76,9 @@
             <button class="btn-delete" onclick="deletePlayer({{ player.id }})">Delete Player</button>
             <div id="rename-player-container-{{ player.id }}"></div>
             <p class="message" id="delete-player-msg-{{ player.id }}"></p>
+            <a href="{{ request.url_for("show_player_stats", user_id = user.id, player_id = player.id) }}">
+                <button class="btn">Show Player Stats</button>
+            </a>
         </li>
     {% else %}
         <li>No players yet.</li>
@@ -311,7 +317,6 @@
             document.getElementById(`rename_player_msg_${playerId}`).textContent = "Error: " + error;
         }
     }
-
 
     function saveCurrentSelections() {
         const currentSelections = {};

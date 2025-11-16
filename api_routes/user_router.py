@@ -5,6 +5,7 @@ from typing import Annotated
 from pydantic import BaseModel
 from BoardGameLogAPI.repositories.db_manager import UserDataManager, GameDataManager
 from BoardGameLogAPI.service.auth_logic import get_current_user
+from BoardGameLogAPI.service.stats_calculator import get_game_stats
 from .index_router import check_user
 from BoardGameLogAPI.custom_exceptions import UnauthorizedException, NotFoundException
 
@@ -57,6 +58,7 @@ def update_username(user_id: int, user_data: dict, current_user: user_dependency
         "message": "Username successfully updated",
     })
 
+
 @router.patch("/{user_id}/password")
 def change_password(user_id: int, password_data: dict, current_user: user_dependency):
     try:
@@ -85,6 +87,21 @@ def delete_user(user_id: int, current_user: user_dependency):
     check_user(user_id, current_user)
 
     user_manager.delete_user(user_id)
+
+
+@router.get("/{user_id}/stats/games")
+def user_game_stats(user_id: int, request: Request, current_user: user_dependency):
+    check_user(user_id, current_user)
+
+    game_stats = get_game_stats(user_id)
+
+    context = {
+        "request": request,
+        "user": current_user,
+        "game_stats": game_stats,
+    }
+
+    return templates.TemplateResponse("game_stats.html", context=context)
 
 
 @router.post("/{user_id}/logout")
