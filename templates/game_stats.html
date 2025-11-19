@@ -3,19 +3,58 @@
 {% block title %}Boardgame Log API - Game Stats{% endblock %}
 
 {% block nav %}
-    <a href="{{ request.url_for('user_home', user_id = user.id) }}">Back to User Home</a>
+    <a href="{{ request.url_for('user_home', user_id = user.id) }}" class="btn btn-outline-light btn-sm">
+        <i class="bi bi-arrow-left"></i> Back to User Home
+    </a>
 {% endblock %}
 
-
 {% block content %}
-<h1>Game Stats</h1>
-    {% for title, stats in game_stats.items()  %}
-    <h2>{{ title }}</h2>
+
+<div class="card">
+    <div class="card-header">
+        <h4 class="mb-0"><i class="bi bi-bar-chart-fill"></i> Game Statistics</h4>
+    </div>
+</div>
+
+{% for title, stats in game_stats.items() %}
+<div class="stat-card">
+    <h2>
+        {% if title == "All Games" %}
+        <i class="bi bi-globe"></i>
+        {% else %}
+        <i class="bi bi-dice-3"></i>
+        {% endif %}
+        {{ title }}
+    </h2>
+
     {% if title == "All Games" %}
-        <p>Count of all Sessions: {{ stats.session_count }}</p>
+        <div class="stat-item highlight-stat">
+            <span class="stat-label"><i class="bi bi-calendar-check"></i> Total Sessions Played</span>
+            <span class="stat-value">{{ stats.session_count }}</span>
+        </div>
     {% else %}
-        <p>Session Count: {{ stats.session_count }}</p>
-        <p>Best Score: {{ stats.best_score }}  (by {{ stats.best_player }})</p>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div class="stat-item">
+                    <span class="stat-label"><i class="bi bi-hash"></i> Sessions</span>
+                    <span class="stat-value">{{ stats.session_count }}</span>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-item">
+                    <span class="stat-label"><i class="bi bi-trophy"></i> Best Score</span>
+                    <span class="stat-value">{{ stats.best_score }}</span>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="stat-item highlight-stat">
+                    <span class="stat-label"><i class="bi bi-star-fill"></i> Top Player</span>
+                    <span class="stat-value">{{ stats.best_player }}</span>
+                </div>
+            </div>
+        </div>
     {% endif %}
-    {% endfor %}
-{%  endblock %}
+</div>
+{% endfor %}
+
+{% endblock %}

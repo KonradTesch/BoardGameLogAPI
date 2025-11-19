@@ -1,5 +1,6 @@
 import uvicorn
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from api_routes.user_router import router as user_router
 from api_routes.session_router import router as session_router
 from api_routes.player_router import router as player_router
@@ -11,6 +12,8 @@ app.include_router(user_router)
 app.include_router(session_router)
 app.include_router(player_router)
 app.include_router(auth_router)
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 if __name__ == "__main__":

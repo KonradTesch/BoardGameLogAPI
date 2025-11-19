@@ -3,6 +3,7 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse, Response
 from typing import Annotated
 from pydantic import BaseModel
+from datetime import datetime
 from BoardGameLogAPI.repositories.db_manager import UserDataManager, GameDataManager
 from BoardGameLogAPI.service.auth_logic import get_current_user
 from BoardGameLogAPI.service.stats_calculator import get_game_stats
@@ -28,9 +29,14 @@ def get_user(access_token: str = Cookie(None)):
 
 user_dependency = Annotated[dict, Depends(get_user)]
 
-class User(BaseModel):
-    username: str
+def formatted_date(date_string):
+    if isinstance(date_string, str):
+        date_obj = datetime.strptime(date_string, '%Y-%m-%d')
+    else:
+        date_obj = date_string
+    return date_obj.strftime('%d.%m.%Y')
 
+templates.env.filters['formatted_date'] = formatted_date
 
 @router.get("/{user_id}")
 def user_home(user_id: int, request: Request, current_user: user_dependency):

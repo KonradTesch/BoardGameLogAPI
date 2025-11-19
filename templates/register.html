@@ -1,74 +1,93 @@
 {% extends "base.html" %}
 
-{% block title %}Boardgame Log API - Login{% endblock %}
+{% block title %}Boardgame Log API - Register{% endblock %}
 
 {% block content %}
-    <h1>Register</h1>
-    
-    <form id="registerForm">
-        <div>
-            <label for="username">Username:</label>
-            <input type="text" id="username" name="username" required>
-        </div>
-        
-        <div>
-            <label for="password">Password:</label>
-            <input type="password" id="password" name="password" required>
-        </div>
-        
-        <div>
-            <label for="confirmPassword">Confirm Password:</label>
-            <input type="password" id="confirmPassword" name="confirmPassword" required>
-        </div>
-        
-        <button type="submit">Register</button>
-    </form>
-    
-    <div id="message"></div>
-    
-    <p>Already have an account? <a href="/login">Login here</a></p>
+<div class="row justify-content-center mt-5">
+    <div class="col-md-5 col-lg-4">
+        <div class="card">
+            <div class="card-body p-4">
+                <h2 class="card-title text-center mb-4">
+                    <i class="bi bi-person-plus"></i> Register
+                </h2>
 
-    <script>
-        document.getElementById('registerForm').addEventListener('submit', handleRegister)
+                <form id="registerForm">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
 
-        async function handleRegister(e) {
-            e.preventDefault();
-            
-            const username = document.getElementById('username').value;
-            const password = document.getElementById('password').value;
-            const confirmPassword = document.getElementById('confirmPassword').value;
-            const messageDiv = document.getElementById('message');
-            
-            if (password !== confirmPassword) {
-                messageDiv.textContent = 'Passwords do not match!';
-                return;
-            }
-            
-            try {
-                const response = await fetch('/auth/', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        username: username,
-                        password: password
-                    })
-                });
-                
-                const data = await response.json();
-                
-                if (response.ok) {
-                    messageDiv.textContent = 'Registration successful! Redirecting to login...';
-                    setTimeout(() => {
-                        window.location.href = '/login';
-                    }, 30);
-                } else {
-                    messageDiv.textContent = data.detail || 'Registration failed';
-                }
-            } catch (error) {
-                messageDiv.textContent = 'An error occurred: ' + error.message;
-            }
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label">Confirm Password</label>
+                        <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-success w-100 mb-3">
+                        <i class="bi bi-check-circle"></i> Register
+                    </button>
+                </form>
+
+                <div id="message" class="message"></div>
+
+                <hr class="my-4">
+
+                <p class="text-center mb-0">
+                    Already have an account? <a href="/login" class="text-decoration-none fw-bold">Login here</a>
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.getElementById('registerForm').addEventListener('submit', handleRegister)
+
+    async function handleRegister(e) {
+        e.preventDefault();
+
+        const username = document.getElementById('username').value;
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        const messageDiv = document.getElementById('message');
+
+        if (password !== confirmPassword) {
+            messageDiv.textContent = 'Passwords do not match!';
+            return;
         }
-    </script>
+
+        try {
+            const response = await fetch('/auth/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    username: username,
+                    password: password
+                })
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                messageDiv.style.background = 'rgba(39, 174, 96, 0.2)';
+                messageDiv.style.borderColor = '#27ae60';
+                messageDiv.style.color = '#27ae60';
+                messageDiv.textContent = 'Registration successful! Redirecting to login...';
+                setTimeout(() => {
+                    window.location.href = '/login';
+                }, 1500);
+            } else {
+                messageDiv.textContent = data.detail || 'Registration failed';
+            }
+        } catch (error) {
+            messageDiv.textContent = 'An error occurred: ' + error.message;
+        }
+    }
+</script>
 {% endblock %}

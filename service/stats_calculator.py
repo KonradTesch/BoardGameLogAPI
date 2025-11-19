@@ -8,6 +8,9 @@ def get_player_session_count(player_id, game_id):
     session_count = len(player_manager.get_player_scores_for_game(player_id, game_id))
     return session_count
 
+def get_player_total_session_count(player_id: int):
+    session_count = len(player_manager.get_player_scores_all(player_id))
+    return session_count
 
 def get_player_game_wins(player_id, game_id):
     scores = player_manager.get_player_scores_for_game(player_id, game_id)
@@ -69,6 +72,7 @@ def get_player_stats(player_id):
 
     total = {}
 
+    total["session_count"] = get_player_total_session_count(player_id)
     total["wins"], total ["win_rate"] = get_total_player_wins(player_id)
 
     player_stats["Total"] = total

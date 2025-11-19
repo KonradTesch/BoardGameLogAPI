@@ -1,20 +1,21 @@
 from datetime import date
-from fastapi import APIRouter, Request, Depends, HTTPException, status
+from fastapi import APIRouter, Request, HTTPException, status
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
-from starlette.status import HTTP_400_BAD_REQUEST, HTTP_201_CREATED, HTTP_200_OK
+from starlette.status import HTTP_201_CREATED, HTTP_200_OK
 from BoardGameLogAPI.repositories.db_manager import GameDataManager, UserDataManager
 from .index_router import check_user
 from BoardGameLogAPI.custom_exceptions import NotFoundException
-from .user_router import user_dependency
+from .user_router import user_dependency, formatted_date
 
 router = APIRouter(
-    prefix="/user{user_id}/session",
+    prefix="/user/{user_id}/session",
     tags=["session"]
 )
 
 templates = Jinja2Templates(directory="templates")
+templates.env.filters['formatted_date'] = formatted_date
 
 game_manager = GameDataManager()
 user_manager = UserDataManager()

@@ -2,180 +2,244 @@
 
 {% block title %}Boardgame Log API - User Profile{% endblock %}
 
-{% block header %}Boardgame API - {{ user.username }}{% endblock %}
+{% block header %}<i class="bi bi-dice-5"></i> Boardgame API - {{ user.username }}{% endblock %}
+
 {% block nav %}
-    <button class="btn" onclick="logout()">Logout</button>
+    <button class="btn btn-outline-light btn-sm" onclick="logout()">
+        <i class="bi bi-box-arrow-right"></i> Logout
+    </button>
 {% endblock %}
 
-
 {% block content %}
-<br>
-<button class="btn-delete" onclick="deleteUser()">Delete User</button>
-<button class="btn-edit" onclick="generateRenameUserSection()">Rename User</button>
-<button class="btn-edit" onclick="generateChangePasswordSection()">Change Password</button>
+
+<div class="action-buttons">
+    <button class="btn btn-outline-danger btn-sm" onclick="deleteUser()">
+        <i class="bi bi-trash"></i> Delete Account
+    </button>
+    <button class="btn btn-outline-primary btn-sm" onclick="generateRenameUserSection()">
+        <i class="bi bi-pencil"></i> Rename User
+    </button>
+    <button class="btn btn-outline-primary btn-sm" onclick="generateChangePasswordSection()">
+        <i class="bi bi-key"></i> Change Password
+    </button>
+</div>
+
 <div id="rename-user-container"></div>
 <div id="change-password-container"></div>
-
 <p class="message" id="delete-user-msg"></p>
-<h2>Game Sessions</h2>
-    <ul id="session-list" class="session-list">
-    {%  for session in user.sessions %}
-        <li class="session-entry">
-        <p> {{ session.game.title }} - {{ session.date }}</p>
-            <a href="{{ request.url_for('session_details', user_id = user.id, session_id = session.id) }}">
-                <button class="btn">Show Details</button>
-            </a>
 
-        </li>
-    {% else %}
-        <li>No sessions yet</li>
-    {%  endfor %}
-    </ul>
-    <a href="{{ request.url_for('user_game_stats', user_id = user.id) }}">
-        <button class="btn">Show Game Stats</button>
-    </a>
-
-
-<h2>Add Game Session</h2>
-<form id="addSession">
-    <div>
-        <label for="games_select">Select a Boardgame:</label>
-        <select name="boardgames" id="games_select">
-            <option value="default">-- Please Select --</option>
-            {% for game in global_games %}
-            <option value="{{ game.id }}">{{ game.title }}</option>
-            {% else %}
-            <option value="games_error">Games doesn't exist</option>
+<!-- Game Sessions Section -->
+<div class="card">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h5 class="mb-0"><i class="bi bi-calendar-event"></i> Game Sessions</h5>
+        <a href="{{ request.url_for('user_game_stats', user_id = user.id) }}" class="btn btn-sm btn-outline-primary">
+            <i class="bi bi-bar-chart"></i> View Stats
+        </a>
+    </div>
+    <div class="card-body">
+        {% if user.sessions %}
+        <div class="sessions-grid">
+            {% for session in user.sessions %}
+            <div class="session-card">
+                <div class="session-title">
+                    <i class="bi bi-dice-3"></i> {{ session.game.title }}
+                </div>
+                <div class="session-date">
+                    <i class="bi bi-calendar3"></i> {{ session.date | formatted_date }}
+                </div>
+                <div class="card-actions">
+                    <a href="{{ request.url_for('session_details', user_id = user.id, session_id = session.id) }}" class="btn btn-sm btn-primary w-100">
+                        <i class="bi bi-eye"></i> View Details
+                    </a>
+                </div>
+            </div>
             {% endfor %}
-        </select>
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-inbox"></i>
+            <p>No sessions yet. Create your first game session below!</p>
+        </div>
+        {% endif %}
     </div>
+</div>
 
-    <div>
-        <label for="session_date">Date:</label>
-        <input type="date" id="session_date" name="session_date" required>
+<!-- Add Game Session -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-plus-circle"></i> Add Game Session</h5>
     </div>
+    <div class="card-body">
+        <form id="addSession">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <label for="games_select" class="form-label">Select a Boardgame</label>
+                    <select name="boardgames" id="games_select" class="form-select">
+                        <option value="default">-- Please Select --</option>
+                        {% for game in global_games %}
+                        <option value="{{ game.id }}">{{ game.title }}</option>
+                        {% else %}
+                        <option value="games_error">Games doesn't exist</option>
+                        {% endfor %}
+                    </select>
+                </div>
 
-    <div>
-        <label for="playerCount">Player Count:</label>
-        <input type="number" id="playerCount" name="playerCount" min="1" required>
+                <div class="col-md-6">
+                    <label for="session_date" class="form-label">Date</label>
+                    <input type="date" id="session_date" name="session_date" class="form-control" required>
+                </div>
 
-        <div id="playerSelectionContainer"></div>
+                <div class="col-12">
+                    <label for="playerCount" class="form-label">Player Count</label>
+                    <input type="number" id="playerCount" name="playerCount" min="1" class="form-control" required>
+                </div>
+
+                <div class="col-12">
+                    <div id="playerSelectionContainer"></div>
+                </div>
+
+                <div class="col-12">
+                    <button type="submit" class="btn btn-success">
+                        <i class="bi bi-plus-lg"></i> Add Session
+                    </button>
+                </div>
+            </div>
+        </form>
+        <p id="add_session_message" class="message"></p>
     </div>
+</div>
 
-    <button type="submit" class="btn">Add Session</button>
-</form>
+<!-- Existing Players -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-people"></i> Existing Players</h5>
+    </div>
+    <div class="card-body">
+        {% if user.players %}
+        <div class="players-grid">
+            {% for player in user.players %}
+            <div class="player-card">
+                <div class="player-name">
+                    <i class="bi bi-person-circle"></i> {{ player.name }}
+                </div>
+                <div id="rename-player-container-{{ player.id }}"></div>
+                <p class="message" id="delete-player-msg-{{ player.id }}"></p>
+                <div class="card-actions">
+                    <div class="d-grid gap-2">
+                        <a href="{{ request.url_for('show_player_stats', user_id = user.id, player_id = player.id) }}" class="btn btn-sm btn-info">
+                            <i class="bi bi-graph-up"></i> View Stats
+                        </a>
+                        <div class="btn-group">
+                            <button class="btn btn-sm btn-outline-primary" onclick="generateRenamePlayerSection({{ player.id }}, '{{ player.name }}')">
+                                <i class="bi bi-pencil"></i> Rename
+                            </button>
+                            <button class="btn btn-sm btn-outline-danger" onclick="deletePlayer({{ player.id }})">
+                                <i class="bi bi-trash"></i> Delete
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-state">
+            <i class="bi bi-person-x"></i>
+            <p>No players yet. Create your first player below!</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
 
-<p id="add_session_message"></p>
-
-<h2>Existing Players</h2>
-<ul id="player-list" class="player-list">
-    {% for player in user.players %}
-        <li class="player-entry">
-            <p class="player-name">{{ player.name }}</p>
-            <button class="btn-edit" onclick="generateRenamePlayerSection({{ player.id }}, '{{ player.name }}')">Rename</button>
-            <button class="btn-delete" onclick="deletePlayer({{ player.id }})">Delete Player</button>
-            <div id="rename-player-container-{{ player.id }}"></div>
-            <p class="message" id="delete-player-msg-{{ player.id }}"></p>
-            <a href="{{ request.url_for("show_player_stats", user_id = user.id, player_id = player.id) }}">
-                <button class="btn">Show Player Stats</button>
-            </a>
-        </li>
-    {% else %}
-        <li>No players yet.</li>
-    {% endfor %}
-</ul>
-
-<h2>Create a New Player</h2>
-<form id="addPlayer">
-    <label for="playerName">Name:</label>
-    <input type="text" id="playerName" name="playerName" required>
-    <button type="submit" class="btn">Add Player</button>
-</form>
-
-<p class="message"></p>
+<!-- Create New Player -->
+<div class="card">
+    <div class="card-header">
+        <h5 class="mb-0"><i class="bi bi-person-plus"></i> Create a New Player</h5>
+    </div>
+    <div class="card-body">
+        <form id="addPlayer" class="row g-3">
+            <div class="col-md-8">
+                <label for="playerName" class="form-label">Name</label>
+                <input type="text" id="playerName" name="playerName" class="form-control" required>
+            </div>
+            <div class="col-md-4 d-flex align-items-end">
+                <button type="submit" class="btn btn-success w-100">
+                    <i class="bi bi-plus-lg"></i> Add Player
+                </button>
+            </div>
+        </form>
+        <p class="message"></p>
+    </div>
+</div>
 
 <script>
     const playerCountInput = document.getElementById('playerCount');
     const playerSelectionContainer = document.getElementById('playerSelectionContainer');
-
-    // Available players
     const availablePlayers = {{ player_names | tojson }};
 
     function deleteUser() {
-
         const confirmed = confirm(
             "Are you sure you want to delete your account?\n\n" +
             "This action cannot be undone!"
         );
 
-        if (!confirmed) {
-            return;
-        }
+        if (!confirmed) return;
 
         fetch("{{ request.url_for('delete_user', user_id=user.id) }}", {
             method: "DELETE",
             credentials: "include"
         })
-           .then(response => {
-               if (response.ok) {
-                   window.location.href = "{{ request.url_for('index') }}";
-               }
-               else {
-                   document.getElementById("delete-user-msg").textContent = "Delete failed";
-               }
-           })
+        .then(response => {
+            if (response.ok) {
+                window.location.href = "{{ request.url_for('index') }}";
+            } else {
+                document.getElementById("delete-user-msg").textContent = "Delete failed";
+            }
+        })
     }
 
     function generateRenameUserSection() {
         const renameContainer = document.getElementById("rename-user-container");
-
         renameContainer.innerHTML = '';
-
         const div = document.createElement('div');
-
-
+        div.className = 'card mb-3';
         div.innerHTML = `
-                    <form id="rename_user">
-                    <label for="new_username">new Username:</label>
-                    <input type="text" name="new_username" id="new_username", value="{{ user.username }}">
-                    <button type="submit" class="btn">Rename</button>
-                    <button type="button" class="btn-delete" onclick="cancelUserRename()">Cancel</button>
-                    </form>
-                    <p id="rename_msg"></p>
-                `;
-
+            <div class="card-body">
+                <form id="rename_user" class="row g-3">
+                    <div class="col-md-8">
+                        <label for="new_username" class="form-label">New Username</label>
+                        <input type="text" name="new_username" id="new_username" class="form-control" value="{{ user.username }}">
+                    </div>
+                    <div class="col-md-4 d-flex align-items-end gap-2">
+                        <button type="submit" class="btn btn-primary">Rename</button>
+                        <button type="button" class="btn btn-secondary" onclick="cancelUserRename()">Cancel</button>
+                    </div>
+                </form>
+                <p id="rename_msg" class="message"></p>
+            </div>
+        `;
         renameContainer.appendChild(div);
-
         document.getElementById("rename_user").addEventListener("submit", renameUser);
     }
 
     function cancelUserRename() {
-        const renameContainer = document.getElementById("rename-user-container");
-        renameContainer.innerHTML = '';
+        document.getElementById("rename-user-container").innerHTML = '';
     }
 
     async function renameUser(e) {
         e.preventDefault();
-
-        const new_username = document.getElementById("new_username").value
+        const new_username = document.getElementById("new_username").value;
 
         try {
-            const response = await fetch("{{ request.url_for("update_username", user_id = user.id) }}", {
+            const response = await fetch("{{ request.url_for('update_username', user_id = user.id) }}", {
                 method: "PATCH",
                 credentials: "include",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    username: new_username
-                })
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({username: new_username})
             });
-
             const data = await response.json();
-
             if (response.ok) {
                 location.reload();
-
             } else {
                 document.getElementById("rename_msg").textContent = data.error;
             }
@@ -186,46 +250,44 @@
 
     function generateChangePasswordSection() {
         const passwordContainer = document.getElementById("change-password-container");
-
         passwordContainer.innerHTML = '';
-
         const div = document.createElement('div');
-
+        div.className = 'card mb-3';
         div.innerHTML = `
-                    <form id="change_password">
-                    <label for="old_password">Old Password:</label>
-                    <input type="password" name="old_password" id="old_password" required>
-                    <br>
-                    <label for="new_password">New Password:</label>
-                    <input type="password" name="new_password" id="new_password" required>
-                    <br>
-                    <label for="confirm_password">Confirm New Password:</label>
-                    <input type="password" name="confirm_password" id="confirm_password" required>
-                    <br>
-                    <button type="submit" class="btn">Change Password</button>
-                    <button type="button" class="btn-delete" onclick="cancelPasswordChange()">Cancel</button>
-                    </form>
-                    <p id="password_change_msg"></p>
-                `;
-
+            <div class="card-body">
+                <form id="change_password">
+                    <div class="mb-3">
+                        <label for="old_password" class="form-label">Old Password</label>
+                        <input type="password" name="old_password" id="old_password" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="new_password" class="form-label">New Password</label>
+                        <input type="password" name="new_password" id="new_password" class="form-control" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirm_password" class="form-label">Confirm New Password</label>
+                        <input type="password" name="confirm_password" id="confirm_password" class="form-control" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Change Password</button>
+                    <button type="button" class="btn btn-secondary" onclick="cancelPasswordChange()">Cancel</button>
+                </form>
+                <p id="password_change_msg" class="message"></p>
+            </div>
+        `;
         passwordContainer.appendChild(div);
-
         document.getElementById("change_password").addEventListener("submit", changePassword);
     }
 
     function cancelPasswordChange() {
-        const passwordContainer = document.getElementById("change-password-container");
-        passwordContainer.innerHTML = '';
+        document.getElementById("change-password-container").innerHTML = '';
     }
 
     async function changePassword(e) {
         e.preventDefault();
-
         const old_password = document.getElementById("old_password").value;
         const new_password = document.getElementById("new_password").value;
         const confirm_password = document.getElementById("confirm_password").value;
 
-        // Client-side validation
         if (new_password !== confirm_password) {
             document.getElementById("password_change_msg").textContent = "New passwords do not match!";
             return;
@@ -235,23 +297,14 @@
             const response = await fetch("{{ request.url_for('change_password', user_id = user.id) }}", {
                 method: "PATCH",
                 credentials: "include",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    old_password: old_password,
-                    new_password: new_password
-                })
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({old_password, new_password})
             });
-
             const data = await response.json();
-
             if (response.ok) {
                 document.getElementById("password_change_msg").textContent = "Password changed successfully!";
                 document.getElementById("change_password").reset();
-                setTimeout(() => {
-                    cancelPasswordChange();
-                }, 2000);
+                setTimeout(() => cancelPasswordChange(), 2000);
             } else {
                 document.getElementById("password_change_msg").textContent = data.error;
             }
@@ -262,52 +315,39 @@
 
     function generateRenamePlayerSection(playerId, currentName) {
         const renameContainer = document.getElementById(`rename-player-container-${playerId}`);
-
-        // Clear existing content
         renameContainer.innerHTML = '';
-
         const div = document.createElement('div');
-
+        div.className = 'mt-2 mb-2';
         div.innerHTML = `
-                    <form id="rename_player_${playerId}">
-                    <label for="new_playername_${playerId}">New Player Name:</label>
-                    <input type="text" name="new_playername_${playerId}" id="new_playername_${playerId}" value="${currentName}">
-                    <button type="submit" class="btn">Rename</button>
-                    <button type="button" class="btn-delete" onclick="cancelRenamePlayer(${playerId})">Cancel</button>
-                    </form>
-                    <p id="rename_player_msg_${playerId}"></p>
-                `;
-
+            <form id="rename_player_${playerId}" class="d-grid gap-2">
+                <input type="text" name="new_playername_${playerId}" id="new_playername_${playerId}" class="form-control form-control-sm" value="${currentName}">
+                <div class="btn-group">
+                    <button type="submit" class="btn btn-sm btn-primary">Rename</button>
+                    <button type="button" class="btn btn-sm btn-secondary" onclick="cancelRenamePlayer(${playerId})">Cancel</button>
+                </div>
+            </form>
+            <p id="rename_player_msg_${playerId}" class="message"></p>
+        `;
         renameContainer.appendChild(div);
-
         document.getElementById(`rename_player_${playerId}`).addEventListener("submit", (e) => renamePlayer(e, playerId));
     }
 
     function cancelRenamePlayer(playerId) {
-        const renameContainer = document.getElementById(`rename-player-container-${playerId}`);
-        renameContainer.innerHTML = '';
+        document.getElementById(`rename-player-container-${playerId}`).innerHTML = '';
     }
 
     async function renamePlayer(e, playerId) {
         e.preventDefault();
-
         const new_playername = document.getElementById(`new_playername_${playerId}`).value;
 
         try {
             const response = await fetch("{{ request.url_for('update_player', user_id = user.id) }}", {
                 method: "PATCH",
                 credentials: "include",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    player_id: playerId,
-                    player_name: new_playername
-                })
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({player_id: playerId, player_name: new_playername})
             });
-
             const data = await response.json();
-
             if (response.ok) {
                 location.reload();
             } else {
@@ -322,17 +362,14 @@
         const currentSelections = {};
         for (let i = 1; i <= playerCountInput.value; i++) {
             const select = document.getElementById(`player${i}`);
-            if (select)
-            {
-                currentSelections[i] = select.value;
-            }
+            if (select) currentSelections[i] = select.value;
         }
         return currentSelections;
     }
 
     playerCountInput.addEventListener('input', function() {
-    const count = parseInt(this.value);
-    generatePlayerDropdowns(count);
+        const count = parseInt(this.value);
+        generatePlayerDropdowns(count);
     });
 
     function generatePlayerDropdowns(count) {
@@ -342,20 +379,29 @@
         if (count > 0) {
             for (let i = 1; i <= count; i++) {
                 const div = document.createElement('div');
+                div.className = 'player-edit-row';
                 div.innerHTML = `
-                    <label for="player_select_${i}">Player ${i}:</label>
-                    <select id="player_select_${i}" name="player_select_${i}" required>
-                        <option value="">-- Select player --</option>
-                        ${availablePlayers.map(player => `<option value="${player.id}">${player.name}</option>`).join('')}
-                    </select>
-                    <label for="player_score">Score:</label>
-                    <input type="number" name="player_score_${i}" id="player_score_${i}">
-                    <input type="checkbox" name="player_winner_${i}" id="player_winner_${i}">
-                    <label for="player_winner_${i}">Winner</label>
-                    <br>
+                    <div class="row g-2">
+                        <div class="col-md-5">
+                            <label for="player_select_${i}" class="form-label">Player ${i}</label>
+                            <select id="player_select_${i}" name="player_select_${i}" class="form-select form-select-sm" required>
+                                <option value="">-- Select player --</option>
+                                ${availablePlayers.map(player => `<option value="${player.id}">${player.name}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="player_score_${i}" class="form-label">Score</label>
+                            <input type="number" name="player_score_${i}" id="player_score_${i}" class="form-control form-control-sm">
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <div class="form-check">
+                                <input type="checkbox" name="player_winner_${i}" id="player_winner_${i}" class="form-check-input">
+                                <label for="player_winner_${i}" class="form-check-label">Winner</label>
+                            </div>
+                        </div>
+                    </div>
                 `;
                 playerSelectionContainer.appendChild(div);
-
                 if (currentSelections[i]) {
                     document.getElementById(`player${i}`).value = currentSelections[i];
                 }
@@ -365,52 +411,35 @@
 
     document.getElementById("addSession").addEventListener('submit', function(e) {
         e.preventDefault();
-
         const game_id = parseInt(document.getElementById("games_select").value);
-        const date =  document.getElementById("session_date").value;
+        const date = document.getElementById("session_date").value;
         const players = [];
 
-        for (let i = 1; i <= playerCountInput.value; i++)
-        {
+        for (let i = 1; i <= playerCountInput.value; i++) {
             const id = document.getElementById(`player_select_${i}`).value;
             const score = document.getElementById(`player_score_${i}`).value;
             const winner = document.getElementById(`player_winner_${i}`).checked;
-
-            players.push({"id":id, "score":score, "winner":winner });
+            players.push({id, score, winner});
         }
-
         addSession(game_id, date, players);
     });
 
     async function addSession(boardgame_id, date, players) {
-        try
-        {
+        try {
             const response = await fetch("{{ request.url_for('create_session', user_id = user.id) }}", {
                 method: "POST",
                 credentials: "include",
-                headers: {
-                        "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    boardgame_id: boardgame_id,
-                    date: date,
-                    players: players
-                })
+                headers: {"Content-Type": "application/json"},
+                body: JSON.stringify({boardgame_id, date, players})
             });
-
             const data = await response.json();
-
-            if (response.ok)
-            {
+            if (response.ok) {
                 document.getElementById("addSession").reset();
                 location.reload();
-            }
-            else
-            {
+            } else {
                 document.getElementById("add_session_message").textContent = data.error;
             }
-        } catch (error)
-        {
+        } catch (error) {
             document.getElementById("add_session_message").textContent = "Error: " + error;
         }
     }
@@ -419,47 +448,39 @@
 
     async function addPlayer(e) {
         e.preventDefault();
-
         const playerName = document.getElementById("playerName").value;
 
-        try
-        {
+        try {
             const response = await fetch("{{ request.url_for('create_player', user_id = user.id) }}" + "?player_name=" + playerName, {
                 method: "POST",
                 credentials: "include"
             });
-
             const data = await response.json();
-
-            if (response.ok)
-            {
+            if (response.ok) {
                 document.getElementById("addPlayer").reset();
                 location.reload();
-                document.getElementById("message").textContent = data.message;
+            } else {
+                document.querySelector("#addPlayer + .message").textContent = data.error;
             }
-            else
-            {
-                document.getElementById("message").textContent = data.error;
-            }
-        } catch (error)
-        {
-            document.getElementById("message").textContent = "Error: " + error;
+        } catch (error) {
+            document.querySelector("#addPlayer + .message").textContent = "Error: " + error;
         }
     }
 
     async function deletePlayer(playerID) {
+        if (!confirm("Are you sure you want to delete this player?")) return;
+
         fetch("{{request.url_for('delete_player', user_id=user.id) }}" + "?player_id=" + playerID, {
             method: "DELETE",
             credentials: "include"
         })
-            .then(response => {
-                if (response.ok) {
-                    location.reload();
-                }
-                else {
-                    document.getElementById("delete-player-msg").textContent = "Delete failed";
-                }
-            })
+        .then(response => {
+            if (response.ok) {
+                location.reload();
+            } else {
+                document.getElementById(`delete-player-msg-${playerID}`).textContent = "Delete failed";
+            }
+        })
     }
 
     async function logout() {
@@ -468,7 +489,6 @@
                 method: "POST",
                 credentials: "include"
             });
-
             if (response.ok) {
                 window.location.href = "/";
             } else {
@@ -479,6 +499,5 @@
             alert("Logout failed: " + error);
         }
     }
-
 </script>
 {% endblock %}
