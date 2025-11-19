@@ -211,9 +211,12 @@ class GameDataManager:
         game_session.game_id = game_id
         game_session.date = date_value
 
+        session_players_before = session.query(Session_Player).filter(Session_Player.session_id == session_id).all()
+
         for player in players:
             player_id = player["player_id"]
 
+            #current players
             session_player = session.query(Session_Player).filter(Session_Player.session_id == game_session.id).filter(Session_Player.player_id == player_id).first()
 
             if not session_player:
@@ -225,10 +228,17 @@ class GameDataManager:
                 )
 
                 session.add(new_session_player)
+
+
             else:
                 session_player.score = player["score"]
                 session_player.winner = player["winner"]
 
+                session_players_before.remove(session_player)
+
+            if len(session_players_before) > 0:
+                for session_player in session_players_before:
+                    session.delete(session_player)
             session.commit()
 
     def delete_session(self, session_id: int):
