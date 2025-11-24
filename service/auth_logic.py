@@ -3,7 +3,7 @@ from jose import jwt, JWTError
 from dotenv import load_dotenv
 from os import getenv
 
-from BoardGameLogAPI.custom_exceptions import UnauthorizedException
+from custom_exceptions import UnauthorizedException
 
 load_dotenv()
 SECRET_KEY = getenv("SECRET_KEY")

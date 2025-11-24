@@ -1,4 +1,4 @@
-from BoardGameLogAPI.repositories.db_manager import PlayerDataManager, UserDataManager, GameDataManager
+from repositories.db_manager import PlayerDataManager, UserDataManager, GameDataManager
 
 user_manager = UserDataManager()
 player_manager = PlayerDataManager()

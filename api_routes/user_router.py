@@ -3,11 +3,11 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse, Response
 from typing import Annotated
 from pydantic import BaseModel
-from BoardGameLogAPI.repositories.db_manager import UserDataManager, GameDataManager
-from BoardGameLogAPI.service.auth_logic import get_current_user
-from BoardGameLogAPI.service.stats_calculator import get_game_stats
-from .index_router import check_user
-from BoardGameLogAPI.custom_exceptions import UnauthorizedException, NotFoundException
+from repositories.db_manager import UserDataManager, GameDataManager
+from service.auth_logic import get_current_user
+from service.stats_calculator import get_game_stats
+from api_routes.index_router import check_user
+from custom_exceptions import UnauthorizedException, NotFoundException
 
 router = APIRouter(
     prefix="/user",

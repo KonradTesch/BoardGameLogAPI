@@ -1,17 +1,12 @@
 from datetime import date
-from BoardGameLogAPI.models import User, Base, Player, Boardgame, Game_Session, Session_Player
+from models import User, Base, Player, Boardgame, Game_Session, Session_Player
 from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from passlib.context import CryptContext
 from dotenv import load_dotenv
 import os
-from BoardGameLogAPI.custom_exceptions import NotFoundException, UnauthorizedException, UnprocessableException
+from custom_exceptions import NotFoundException, UnauthorizedException, UnprocessableException
 
-def setup_database():
-    Base.metadata.create_all(bind=engine)
-
-    session.execute(text("DROP SCHEMA public CASCADE"))
-    session.execute(text("CREATE SCHEMA public"))
 
 load_dotenv()
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
@@ -20,8 +15,6 @@ engine = create_engine(SQLALCHEMY_DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 session = SessionLocal()
-
-setup_database()
 
 bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 

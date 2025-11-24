@@ -3,11 +3,11 @@ version: "3.9"
 services:
   db:
     image: postgres:15
-    container_name: boardgameapi_postgres
+    container_name: BoardgameAPI_postgres
     environment:
       POSTGRES_DB: BoardgameAPI_Database
-      POSTGRES_USER: <USERNAME>
-      POSTGRES_PASSWORD: <PASSWORD>
+      POSTGRES_USER: Konrad
+      POSTGRES_PASSWORD: Anno1800
     ports:
       - "5432:5432"
     volumes:
