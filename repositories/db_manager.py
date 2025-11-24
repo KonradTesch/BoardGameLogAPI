@@ -1,6 +1,6 @@
 from datetime import date
 from BoardGameLogAPI.models import User, Base, Player, Boardgame, Game_Session, Session_Player
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import sessionmaker
 from passlib.context import CryptContext
 from dotenv import load_dotenv
@@ -9,6 +9,9 @@ from BoardGameLogAPI.custom_exceptions import NotFoundException, UnauthorizedExc
 
 def setup_database():
     Base.metadata.create_all(bind=engine)
+
+    session.execute(text("DROP SCHEMA public CASCADE"))
+    session.execute(text("CREATE SCHEMA public"))
 
 load_dotenv()
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")

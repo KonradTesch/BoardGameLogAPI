@@ -1,0 +1,18 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15
+    container_name: boardgameapi_postgres
+    environment:
+      POSTGRES_DB: BoardgameAPI_Database
+      POSTGRES_USER: <USERNAME>
+      POSTGRES_PASSWORD: <PASSWORD>
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
