@@ -1,6 +1,6 @@
-from db_manager import DataManager
+from db_manager import GameDataManager
 
-data_manager = DataManager()
+data_manager = GameDataManager()
 
 data_manager.create_game("7 Wonders", 3, 7)
 data_manager.create_game("Dune Imperium", 1, 4)

@@ -2,10 +2,10 @@ from fastapi import APIRouter, HTTPException, status, Request
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_201_CREATED, HTTP_200_OK
-from BoardGameLogAPI.repositories.db_manager import PlayerDataManager, UserDataManager
+from app.repositories.db_manager import PlayerDataManager, UserDataManager
 from .index_router import check_user
-from BoardGameLogAPI.custom_exceptions import NotFoundException, UnprocessableException
-from BoardGameLogAPI.service.stats_calculator import get_player_stats
+from app.custom_exceptions import NotFoundException, UnprocessableException
+from app.service.stats_calculator import get_player_stats
 from .user_router import user_dependency
 
 router = APIRouter(

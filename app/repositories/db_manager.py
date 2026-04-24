@@ -1,11 +1,11 @@
 from datetime import date
-from BoardGameLogAPI.models import User, Base, Player, Boardgame, Game_Session, Session_Player
+from app.models import User, Base, Player, Boardgame, Game_Session, Session_Player
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from passlib.context import CryptContext
 from dotenv import load_dotenv
 import os
-from BoardGameLogAPI.custom_exceptions import NotFoundException, UnauthorizedException, UnprocessableException
+from app.custom_exceptions import NotFoundException, UnauthorizedException, UnprocessableException
 
 def setup_database():
     Base.metadata.create_all(bind=engine)

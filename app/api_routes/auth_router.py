@@ -2,11 +2,11 @@ from fastapi import APIRouter, Depends, Response, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from starlette import status
-from BoardGameLogAPI.custom_exceptions import UnprocessableException, NotFoundException, UnauthorizedException
-from BoardGameLogAPI.repositories.db_manager import UserDataManager
+from app.custom_exceptions import UnprocessableException, NotFoundException, UnauthorizedException
+from app.repositories.db_manager import UserDataManager
 from dotenv import load_dotenv
 from os import getenv
-from BoardGameLogAPI.service.auth_logic import create_access_token
+from app.service.auth_logic import create_access_token
 
 router = APIRouter(
     prefix="/auth",

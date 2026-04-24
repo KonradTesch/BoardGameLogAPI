@@ -4,9 +4,9 @@ from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse
 from pydantic import BaseModel
 from starlette.status import HTTP_201_CREATED, HTTP_200_OK
-from BoardGameLogAPI.repositories.db_manager import GameDataManager, UserDataManager
+from app.repositories.db_manager import GameDataManager, UserDataManager
 from .index_router import check_user
-from BoardGameLogAPI.custom_exceptions import NotFoundException
+from app.custom_exceptions import NotFoundException
 from .user_router import user_dependency, formatted_date
 
 router = APIRouter(
