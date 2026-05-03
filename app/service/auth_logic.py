@@ -1,3 +1,4 @@
+from typing import Any
 from fastapi import Cookie
 from jose import jwt, JWTError
 from dotenv import load_dotenv
@@ -13,7 +14,7 @@ def create_access_token(username: str, user_id: int):
     encode = {'sub': username, 'id': user_id}
     return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
 
-def get_current_user(access_token: str = Cookie(None)):
+def get_current_user(access_token: str = Cookie(None)) -> dict[str, Any]:
     if not access_token:
         raise UnauthorizedException("Missing access token")
 
