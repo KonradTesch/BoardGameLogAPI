@@ -3,15 +3,16 @@ import {AuthContext} from "../context/AuthContext.tsx";
 import {useNavigate} from "react-router-dom";
 
 function AppAuth() {
-    const { setUser} = useContext(AuthContext)!;
+    const { setUser, setIsLoading } = useContext(AuthContext)!;
     const navigate = useNavigate();
 
 useEffect(() => {
     const auth_user = async () => {
-        const response = await fetch("api/auth/user", {
+        setIsLoading(true);
+        const response = await fetch("/api/auth/user", {
         method: "GET",
         });
-
+        setIsLoading(false);
         if (response.ok){
             const data = await response.json();
             setUser(data)

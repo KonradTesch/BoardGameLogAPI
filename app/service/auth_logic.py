@@ -25,6 +25,6 @@ def get_current_user(access_token: str = Cookie(None)) -> dict[str, Any]:
         if username is None or user_id is None:
             raise UnauthorizedException("Could not validate user.")
 
-        return {"username": username, "id": user_id}
+        return {"name": username, "id": user_id}
     except JWTError:
         raise UnauthorizedException("Invalid or expired access token")

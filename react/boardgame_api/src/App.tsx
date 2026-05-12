@@ -1,10 +1,9 @@
-import {BrowserRouter, Routes, Route, Navigate} from "react-router-dom"
+import {BrowserRouter} from "react-router-dom"
 import {AuthProvider} from "./context/AuthContext.tsx";
-import Header from './components/Header'
-import LoginPage from "./pages/LoginPage.tsx";
-import DashboardPage from "./pages/DashboardPage.tsx";
 import AppAuth from "./components/AppAuth.tsx";
 import "./styles/App.css"
+import AppContent from "./layout/AppContent.tsx";
+
 
 
 function App() {
@@ -12,13 +11,7 @@ function App() {
         <AuthProvider>
             <BrowserRouter>
                 <AppAuth />
-                <Header />
-                <Routes>
-                    <Route path="/" element={<Navigate to="/login" />} />
-                    <Route path="/login" element={<LoginPage />} />
-                    <Route path="/user/:userId/dashboard" element={<DashboardPage/>} />
-                </Routes>
-
+                <AppContent />
             </BrowserRouter>
         </AuthProvider>
     );

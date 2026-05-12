@@ -29,7 +29,7 @@ def get_user(access_token: str = Cookie(None)) -> dict[str, Any] :
 user_dependency = Annotated[dict, Depends(get_user)]
 
 class CreateUserRequest(BaseModel):
-    username: str
+    name: str
     password: str
 
 
