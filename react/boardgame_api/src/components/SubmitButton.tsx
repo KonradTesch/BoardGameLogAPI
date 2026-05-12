@@ -1,5 +1,7 @@
+import type {ReactNode} from "react";
+
 interface SubmitButtonProps{
-    label: string;
+    label: string | ReactNode;
     onClick: () => void;
     disabled?: boolean;
 }

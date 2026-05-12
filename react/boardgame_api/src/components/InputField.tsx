@@ -4,9 +4,10 @@ interface InputFiledProps {
     label: string;
     type: string;
     placeholder?: string;
-    value: string;
-    onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
+    value?: string;
+    onChange?: (e: React.ChangeEvent<HTMLInputElement>) => void;
     onBlur?: () => void;
+    disabled?: boolean;
 }
 
 function InputField(props: InputFiledProps) {
@@ -22,6 +23,7 @@ function InputField(props: InputFiledProps) {
                    value={props.value}
                    onChange={props.onChange}
                    onBlur={props.onBlur}
+                   disabled={props.disabled}
             />
         </div>
     );

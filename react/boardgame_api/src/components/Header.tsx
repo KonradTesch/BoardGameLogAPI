@@ -25,7 +25,8 @@ function Header() {
                     </a>
                     <div className="d-flex align-items-center gap-4">
                         {user && <NavDropdown user={user} dropdownOptions={[
-                            <a className="dropdown-item" href="#">User Options</a>,
+                            <a className="dropdown-item" href={`/user/${user.id}/dashboard`}>Dashboard</a>,
+                            <a className="dropdown-item" href={`/user/${user.id}/settings`}>Account Settings</a>,
                             <div className="dropdown-item">
                                 <button className="btn btn-primary">Logout</button>
                             </div>

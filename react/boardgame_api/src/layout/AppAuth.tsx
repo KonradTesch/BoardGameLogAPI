@@ -1,10 +1,11 @@
 import {useContext, useEffect} from "react";
 import {AuthContext} from "../context/AuthContext.tsx";
-import {useNavigate} from "react-router-dom";
+import {useLocation, useNavigate} from "react-router-dom";
 
 function AppAuth() {
     const { setUser, setIsLoading } = useContext(AuthContext)!;
     const navigate = useNavigate();
+    const location = useLocation();
 
 useEffect(() => {
     const auth_user = async () => {
@@ -16,8 +17,9 @@ useEffect(() => {
         if (response.ok){
             const data = await response.json();
             setUser(data)
-
-            navigate(`/user/${data.id}/dashboard`)
+            if (location.pathname === "/login") {
+                navigate(`/user/${data.id}/dashboard`)
+            }
         }
         else
         {
