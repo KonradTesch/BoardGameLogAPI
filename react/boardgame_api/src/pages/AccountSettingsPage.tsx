@@ -1,10 +1,14 @@
 import PageHeader from "../components/PageHeader.tsx";
 import FormCard from "../components/FormCard.tsx";
 import InputField from "../components/InputField.tsx";
-import SubmitButton from "../components/SubmitButton.tsx";
+import Button from "../components/Button.tsx";
 import DangerCard from "../components/DangerCard.tsx";
+import {useContext} from "react";
+import {AuthContext} from "../context/AuthContext.tsx";
 
 function AccountSettingsPage() {
+
+    const { user } = useContext(AuthContext)!;
 
     const handleChangeUsername = async () => {
 
@@ -26,7 +30,7 @@ function AccountSettingsPage() {
                         <InputField
                             label="Current Username"
                             type="text"
-                            placeholder="MaxMustermann"
+                            value={user?.name}
                             disabled={true}
                         />
                         <InputField
@@ -34,7 +38,8 @@ function AccountSettingsPage() {
                             type="text"
                             placeholder="Enter new Username"
                         />
-                        <SubmitButton
+                        <Button
+                            variant="primary"
                             label={<><i className="bi bi-check-lg" /> Save Username</>}
                             onClick={handleChangeUsername}
                         />
@@ -57,7 +62,8 @@ function AccountSettingsPage() {
                             type="password"
                             placeholder="Confirm new password"
                         />
-                        <SubmitButton
+                        <Button
+                            variant="primary"
                             label={<><i className="bi bi-check-lg" /> Save Password</>}
                             onClick={handleChangePassword}
                         />
@@ -69,9 +75,11 @@ function AccountSettingsPage() {
                                 Deleting your account is permanent and cannot be undone.
                                 All your data will be lost.
                         </p>
-                        <button className="btn btn-danger" onClick={handleDeleteUser}>
-                            <i className="bi bi-trash-fill" /> Delete Account
-                        </button>
+                        <Button
+                            variant="danger"
+                            label={<><i className="bi bi-trash-fill" /> Delete Account</>}
+                            onClick={handleDeleteUser}>
+                        </Button>
                     </DangerCard>
                 </div>
             </div>

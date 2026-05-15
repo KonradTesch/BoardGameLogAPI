@@ -1,5 +1,5 @@
 import InputField from "../components/InputField.tsx";
-import SubmitButton from "../components/SubmitButton.tsx";
+import Button from "../components/Button.tsx";
 import LoginCard from "../components/LoginCard.tsx";
 import {useState} from "react";
 
@@ -90,7 +90,8 @@ function LoginPage() {
                 />}
                 <div className ="text-center">
                     {errorMessage && <p className="text-warning">{errorMessage}</p>}
-                    <SubmitButton
+                    <Button
+                        variant="primary"
                         label={isLogin ? "Login":"Register"}
                         onClick={isLogin ? handleLogin :handleSignup}
                         disabled={!isValidInput}

@@ -1,7 +1,7 @@
 import type {ReactNode} from "react";
 
 interface PageHeaderProps {
-        header: ReactNode | string;
+        header: ReactNode;
         subHeader?: string;
     }
 

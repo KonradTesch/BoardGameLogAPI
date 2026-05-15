@@ -1,7 +1,7 @@
 import type {ReactNode} from "react";
 
 interface FormCardProps {
-        header: ReactNode | string;
+        header: ReactNode;
         children: ReactNode;
     }
 
