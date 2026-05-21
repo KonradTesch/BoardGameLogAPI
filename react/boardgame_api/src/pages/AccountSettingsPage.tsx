@@ -3,12 +3,19 @@ import FormCard from "../components/FormCard.tsx";
 import InputField from "../components/InputField.tsx";
 import Button from "../components/Button.tsx";
 import DangerCard from "../components/DangerCard.tsx";
-import {useContext} from "react";
+import {useContext, useState} from "react";
 import {AuthContext} from "../context/AuthContext.tsx";
+import ConfirmModal from "../components/ConfirmModal.tsx";
 
 function AccountSettingsPage() {
 
     const { user } = useContext(AuthContext)!;
+
+    const [newUsername, setNewUsername] = useState("");
+    const [oldPassword, setOldPassword] = useState("");
+    const [newPassword, setNewPassword] = useState("");
+    const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
+
 
     const handleChangeUsername = async () => {
 
@@ -37,11 +44,14 @@ function AccountSettingsPage() {
                             label="New Username"
                             type="text"
                             placeholder="Enter new Username"
+                            value={newUsername}
+                            onChange={(e) => setNewUsername(e.target.value)}
                         />
                         <Button
                             variant="primary"
                             label={<><i className="bi bi-check-lg" /> Save Username</>}
                             onClick={handleChangeUsername}
+                            disabled={!newUsername}
                         />
                     </FormCard>
 
@@ -51,16 +61,22 @@ function AccountSettingsPage() {
                             label="Current Password"
                             type="password"
                             placeholder="Enter current password"
+                            value={oldPassword}
+                            onChange={(e) => setOldPassword(e.target.value)}
                         />
                         <InputField
                             label="New Password"
                             type="password"
                             placeholder="Enter new password"
+                            value={newPassword}
+                            onChange={(e) => setNewPassword(e.target.value)}
                         />
                         <InputField
                             label="Confirm New Password"
                             type="password"
                             placeholder="Confirm new password"
+                            value={newPasswordConfirm}
+                            onChange={(e) => setNewPasswordConfirm(e.target.value)}
                         />
                         <Button
                             variant="primary"
@@ -70,6 +86,7 @@ function AccountSettingsPage() {
                     </FormCard>
 
                     {/* Danger Zone */}
+                    <ConfirmModal id="confirmAccountDeleteModal" header="Are you sure?" body="Deleting you Account deletes all data irrevocable." onSubmit={handleDeleteUser} />
                     <DangerCard header="Danger Zone">
                         <p className="text-body-secondary">
                                 Deleting your account is permanent and cannot be undone.
@@ -78,8 +95,9 @@ function AccountSettingsPage() {
                         <Button
                             variant="danger"
                             label={<><i className="bi bi-trash-fill" /> Delete Account</>}
-                            onClick={handleDeleteUser}>
-                        </Button>
+                            data-bs-toggle="modal"
+                            data-bs-target="#confirmAccountDeleteModal"
+                        />
                     </DangerCard>
                 </div>
             </div>

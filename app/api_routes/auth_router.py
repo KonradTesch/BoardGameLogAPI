@@ -64,7 +64,11 @@ async def login_for_access_token(response: Response, form_data: OAuth2PasswordRe
             samesite="lax"
         )
 
-        return {"message": "Login successful", "user_id": user.id}
+        return {
+            "message": "Login successful",
+            "id": user.id,
+            "name": user.username
+        }
     except NotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except UnauthorizedException as e:

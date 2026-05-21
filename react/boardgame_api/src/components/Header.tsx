@@ -1,11 +1,15 @@
 import { useState, useEffect, useContext} from "react";
 import {AuthContext} from "../context/AuthContext.tsx";
 import NavDropdown from "./NavDropdown.tsx";
+import Button from "./Button.tsx";
+import {useNavigate} from "react-router-dom";
 
 function Header() {
     const [isDark, setIsDark] = useState(
         () => localStorage.getItem("theme") === "dark"
     );
+
+    const { setUser } = useContext(AuthContext)!;
 
     useEffect (() => {
        const theme = isDark ? "dark" : "light";
@@ -14,6 +18,19 @@ function Header() {
     }, [isDark]);
 
     const { user } = useContext(AuthContext)!;
+    const navigate = useNavigate();
+
+    const handleLogout = async () => {
+        const response = await fetch(`/api/user/${user?.id}/logout`, {
+            method: "POST",
+            credentials: "include"
+        });
+
+        if (response.ok) {
+            setUser(null)
+            navigate("/login")
+        }
+    }
 
 
     return (
@@ -28,7 +45,7 @@ function Header() {
                             <a className="dropdown-item" href={`/user/${user.id}/dashboard`}>Dashboard</a>,
                             <a className="dropdown-item" href={`/user/${user.id}/settings`}>Account Settings</a>,
                             <div className="dropdown-item">
-                                <button className="btn btn-primary">Logout</button>
+                                <Button label="Logout" onClick={handleLogout}/>
                             </div>
                         ]}/>}
                         <button onClick={() => setIsDark(!isDark)}>

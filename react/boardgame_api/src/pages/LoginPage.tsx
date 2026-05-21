@@ -1,9 +1,14 @@
 import InputField from "../components/InputField.tsx";
 import Button from "../components/Button.tsx";
 import LoginCard from "../components/LoginCard.tsx";
-import {useState} from "react";
+import {useContext, useState} from "react";
+import {AuthContext} from "../context/AuthContext.tsx";
+import {useNavigate} from "react-router-dom";
 
 function LoginPage() {
+
+    const navigate = useNavigate()
+
     const [isLogin, setIsLogin] = useState(true);
 
     const toggleLogin = () => {
@@ -13,6 +18,7 @@ function LoginPage() {
     const [isValidInput, setIsValidInput] = useState(false);
 
     const [errorMessage, setErrorMessage] = useState("");
+    const { setUser } = useContext(AuthContext)!;
 
 
     const handleSignup = async ()  => {
@@ -36,8 +42,15 @@ function LoginPage() {
             body: formData
         });
 
-        const data = await response.json();
-        setErrorMessage(data.message)
+        if (response.ok) {
+            const data = await response.json();
+            setErrorMessage(data.message)
+
+            setUser({id: data.id, name: data.name});
+            navigate(`/user/${data.id}/dashboard`)
+        }
+
+
     };
 
     const validatePasswords = () => {
