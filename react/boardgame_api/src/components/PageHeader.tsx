@@ -6,8 +6,6 @@ interface PageHeaderProps {
     }
 
 function PageHeader(props: PageHeaderProps) {
-
-
     return (
         <div className="mb-4">
             <h2>{props.header}</h2>

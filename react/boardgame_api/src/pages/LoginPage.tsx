@@ -1,34 +1,54 @@
 import InputField from "../components/InputField.tsx";
 import Button from "../components/Button.tsx";
 import LoginCard from "../components/LoginCard.tsx";
-import {useContext, useState} from "react";
+import {useContext, useEffect, useState} from "react";
 import {AuthContext} from "../context/AuthContext.tsx";
 import {useNavigate} from "react-router-dom";
+import InformationText from "../components/InformationText.tsx";
+import type {InfoText} from "../types/InfoText.ts";
+import {getDetailStringOrDefault} from "../util/util.ts";
 
 function LoginPage() {
-
     const navigate = useNavigate()
 
+    const { setUser } = useContext(AuthContext)!;
+
     const [isLogin, setIsLogin] = useState(true);
+    const [infoMessage, setInfoMessage] = useState<InfoText | null>(null);
+    const [username, setUsername] = useState("");
+    const [password, setPassword] = useState("");
+    const [confirmPassword, setConfirmPassword] = useState("");
+
+    useEffect(() => {
+        if (isLogin && confirmPassword !== "" && password !== "" && confirmPassword !== password) {
+            setInfoMessage({message: "Passwords do not match", variant: "warning"});
+        }
+        else {
+            setInfoMessage({message: ""});
+        }
+    }, [password, confirmPassword])
+
+
+    const isValidInput = username !== "" && password !== "" && (isLogin || confirmPassword !== "");
 
     const toggleLogin = () => {
       setIsLogin(!isLogin);
     };
 
-    const [isValidInput, setIsValidInput] = useState(false);
-
-    const [errorMessage, setErrorMessage] = useState("");
-    const { setUser } = useContext(AuthContext)!;
-
-
     const handleSignup = async ()  => {
-        const response = await fetch("/api/auth/", {
+        const response = await fetch("/api/auth/register", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({username: username, password: password})
+            body: JSON.stringify({name: username, password: password})
         });
         const data = await response.json();
-        setErrorMessage(data.message)
+        if (response.ok) {
+            setInfoMessage({message: data.message, variant: "success"})
+            await handleLogin();
+        }
+        else {
+            setInfoMessage({message: getDetailStringOrDefault(data.detail, "Unknown error"), variant: "warning"})
+        }
     };
 
     const handleLogin = async () => {
@@ -41,42 +61,17 @@ function LoginPage() {
             headers: {"Content-Type": "application/x-www-form-urlencoded"},
             body: formData
         });
-
+        const data = await response.json();
         if (response.ok) {
-            const data = await response.json();
-            setErrorMessage(data.message)
+            setInfoMessage({message: data.message, variant: "success"})
 
             setUser({id: data.id, name: data.name});
             navigate(`/user/${data.id}/dashboard`)
         }
-
-
+        else {
+            setInfoMessage({message: data.detail, variant: "warning"})
+        }
     };
-
-    const validatePasswords = () => {
-        validateInput()
-        if (password !== confirmPassword) {
-            setErrorMessage(("Passwords do not match."));
-        }
-        else {
-            setErrorMessage("");
-        }
-    }
-
-    const validateInput = () => {
-        if (username === "" ||
-            password === "" ||
-            (!isLogin && (confirmPassword === "" || confirmPassword !== password))){
-            setIsValidInput(false)
-        }
-        else {
-            setIsValidInput(true)
-        }
-    }
-
-    const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
-    const [confirmPassword, setConfirmPassword] = useState("");
 
     return (
         <LoginCard isLogin={isLogin}>
@@ -85,24 +80,21 @@ function LoginPage() {
                     type="text"
                     value={username}
                     onChange={(e) =>setUsername(e.target.value)}
-                    onBlur={validateInput}
                 />
                 <InputField
                     label="Password"
                     type="password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    onBlur={validateInput}
                 />
                 {!isLogin && <InputField
                     label="Confirm Password"
                     type="password"
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
-                    onBlur={validatePasswords}
                 />}
                 <div className ="text-center">
-                    {errorMessage && <p className="text-warning">{errorMessage}</p>}
+                    {infoMessage && <InformationText infoText={infoMessage}/>}
                     <Button
                         variant="primary"
                         label={isLogin ? "Login":"Register"}

@@ -9,6 +9,7 @@ from app.service.auth_logic import get_current_user
 from dotenv import load_dotenv
 from os import getenv
 from app.service.auth_logic import create_access_token
+from app.schemas.auth import RegisterRequest
 
 router = APIRouter(
     prefix="/auth",
@@ -28,18 +29,16 @@ def get_user(access_token: str = Cookie(None)) -> dict[str, Any] :
 
 user_dependency = Annotated[dict, Depends(get_user)]
 
-class CreateUserRequest(BaseModel):
-    name: str
-    password: str
-
-
 user_manager = UserDataManager()
 
-@router.post("/", status_code=status.HTTP_201_CREATED)
-async def create_user(create_user_request: CreateUserRequest):
+@router.post("/register", status_code=status.HTTP_201_CREATED)
+async def register(body: RegisterRequest):
     try:
-        created_user = user_manager.create_user(create_user_request.username, create_user_request.password)
-        return {"username": created_user.username}
+        user_manager.create_user(body.name, body.password)
+        return {
+            "message": "Registration successful",
+        }
+
     except UnprocessableException as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
     except NotFoundException as e:
@@ -65,14 +64,14 @@ async def login_for_access_token(response: Response, form_data: OAuth2PasswordRe
         )
 
         return {
-            "message": "Login successful",
+            "message": "Login successful.",
             "id": user.id,
             "name": user.username
         }
     except NotFoundException as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail= e.detail)
     except UnauthorizedException as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail= e.detail)
 
 
 

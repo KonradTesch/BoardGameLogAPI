@@ -2,7 +2,6 @@ interface InfoCardProps {
     body: string;
 }
 
-
 function InfoCard(props: InfoCardProps) {
 return (
     <div className="card" style={{minHeight: "18rem"}}>

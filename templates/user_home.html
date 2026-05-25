@@ -235,7 +235,7 @@
                 method: "PATCH",
                 credentials: "include",
                 headers: {"Content-Type": "application/json"},
-                body: JSON.stringify({username: new_username})
+                body: JSON.stringify({new_username: new_username})
             });
             const data = await response.json();
             if (response.ok) {

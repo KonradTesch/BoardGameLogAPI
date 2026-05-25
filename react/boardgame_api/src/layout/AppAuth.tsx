@@ -3,9 +3,11 @@ import {AuthContext} from "../context/AuthContext.tsx";
 import {useLocation, useNavigate} from "react-router-dom";
 
 function AppAuth() {
-    const { setUser, setIsLoading } = useContext(AuthContext)!;
     const navigate = useNavigate();
+
     const location = useLocation();
+
+    const { setUser, setIsLoading } = useContext(AuthContext)!;
 
 useEffect(() => {
     const auth_user = async () => {
@@ -28,7 +30,6 @@ useEffect(() => {
     }
     void auth_user();
 }, []);
-
 
     return <></>;
 }

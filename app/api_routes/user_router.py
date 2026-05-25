@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Request, Depends, status, HTTPException, Cookie
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse, Response
+from pydantic import BaseModel, ConfigDict
+from pydantic.alias_generators import to_camel
 from typing import Annotated
 from datetime import datetime
 from app.repositories.db_manager import UserDataManager, GameDataManager
@@ -8,6 +10,7 @@ from app.service.auth_logic import get_current_user
 from app.service.stats_calculator import get_game_stats
 from .index_router import check_user
 from app.custom_exceptions import UnauthorizedException, NotFoundException
+from app.schemas.user import PasswordChangeRequest, ChangeUsernameRequest
 
 router = APIRouter(
     prefix="/user",
@@ -18,6 +21,7 @@ templates = Jinja2Templates(directory="templates")
 
 user_manager = UserDataManager()
 game_manager = GameDataManager()
+
 
 def get_user(access_token: str = Cookie(None)):
     try:
@@ -53,26 +57,28 @@ def user_home(user_id: int, request: Request, current_user: user_dependency):
     return templates.TemplateResponse("user_home.html", context=context)
 
 
-@router.patch("/{user_id}")
-def update_username(user_id: int, user_data: dict, current_user: user_dependency):
+@router.patch("/{user_id}/username")
+def change_username(user_id: int, body: ChangeUsernameRequest, current_user: user_dependency):
     check_user(user_id, current_user)
-
-    user_manager.update_username(user_id, user_data["username"])
+    new_username = body.get("new_username")
+    user_manager.update_username(user_id, body["new_username"])
     return JSONResponse( status_code=status.HTTP_200_OK,
         content={
-        "message": "Username successfully updated",
+            "message": "Username successfully updated",
+            "name": new_username,
+            "id": user_id,
     })
 
 
 @router.patch("/{user_id}/password")
-def change_password(user_id: int, password_data: dict, current_user: user_dependency):
+def change_password(user_id: int, body: PasswordChangeRequest, current_user: user_dependency):
     try:
         check_user(user_id, current_user)
 
         user_manager.change_password(
             user_id,
-            password_data["old_password"],
-            password_data["new_password"]
+            body.old_password,
+            body.new_password
         )
 
         return JSONResponse(
@@ -88,10 +94,24 @@ def change_password(user_id: int, password_data: dict, current_user: user_depend
 
 
 @router.delete("/{user_id}")
-def delete_user(user_id: int, current_user: user_dependency):
-    check_user(user_id, current_user)
+def delete_account(user_id: int, response: Response, current_user: user_dependency):
+    try:
+        check_user(user_id, current_user)
 
-    user_manager.delete_user(user_id)
+        user_manager.delete_user(user_id)
+
+        response = JSONResponse(
+            status_code=status.HTTP_200_OK,
+            content={
+                "message": "Account successfully deleted."
+            }
+        )
+        response.delete_cookie(key="access_token", httponly=True, secure=False, samesite="lax")
+        return response
+    except UnauthorizedException as e:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+    except NotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
 @router.get("/{user_id}/stats/games")

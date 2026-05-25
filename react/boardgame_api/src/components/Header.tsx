@@ -5,20 +5,19 @@ import Button from "./Button.tsx";
 import {useNavigate} from "react-router-dom";
 
 function Header() {
+    const navigate = useNavigate();
+
+    const { user, setUser } = useContext(AuthContext)!;
+
     const [isDark, setIsDark] = useState(
         () => localStorage.getItem("theme") === "dark"
     );
-
-    const { setUser } = useContext(AuthContext)!;
 
     useEffect (() => {
        const theme = isDark ? "dark" : "light";
        document.documentElement.setAttribute('data-bs-theme', theme);
        localStorage.setItem("theme", theme)
     }, [isDark]);
-
-    const { user } = useContext(AuthContext)!;
-    const navigate = useNavigate();
 
     const handleLogout = async () => {
         const response = await fetch(`/api/user/${user?.id}/logout`, {
@@ -31,7 +30,6 @@ function Header() {
             navigate("/login")
         }
     }
-
 
     return (
         <>

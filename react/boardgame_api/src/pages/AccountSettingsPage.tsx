@@ -6,24 +6,89 @@ import DangerCard from "../components/DangerCard.tsx";
 import {useContext, useState} from "react";
 import {AuthContext} from "../context/AuthContext.tsx";
 import ConfirmModal from "../components/ConfirmModal.tsx";
+import type {InfoText} from "../types/InfoText.ts";
+import InformationText from "../components/InformationText.tsx";
+import {getDetailStringOrDefault} from "../util/util.ts";
+import {useNavigate} from "react-router-dom";
 
 function AccountSettingsPage() {
 
-    const { user } = useContext(AuthContext)!;
+    const navigate = useNavigate();
+
+    const { user, setUser } = useContext(AuthContext)!;
 
     const [newUsername, setNewUsername] = useState("");
     const [oldPassword, setOldPassword] = useState("");
     const [newPassword, setNewPassword] = useState("");
     const [newPasswordConfirm, setNewPasswordConfirm] = useState("");
+    const [changeUsernameInfo, setChangeUsernameInfo] = useState<InfoText>({message: ""});
+    const [changePasswordInfo, setChangePasswordInfo] = useState<InfoText>({message: ""});
+    const [deleteAccountInfo, setDeleteAccountInfo] = useState<InfoText>({message: ""});
 
 
     const handleChangeUsername = async () => {
+        const response = await fetch(`/api/user/${user?.id}/username`, {
+            method: "PATCH",
+            credentials: "include",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({new_username: newUsername})
+        });
 
+        const data = await response.json();
+        if (response.ok) {
+            setUser({id: data.id, name: data.name});
+            setChangeUsernameInfo({message: data.message, variant:"success"})
+        }
+        else {
+            setChangeUsernameInfo({message: getDetailStringOrDefault(data.detail, "Unknown error"), variant:"warning"})
+        }
     };
 
-    const handleChangePassword = async ()  => {};
+    const handleChangePassword = async ()  => {
+        const passwords = {
+            oldPassword: oldPassword,
+            newPassword: newPassword
+        };
 
-    const handleDeleteUser = async () => {};
+        const response = await fetch(`/api/user/${user?.id}/password`, {
+            method: "PATCH",
+            credentials: "include",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify(passwords)
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            setChangePasswordInfo({message: data.message, variant:"success"})
+        }
+        else {
+            setChangePasswordInfo({message: getDetailStringOrDefault(data.detail, "Unknown error"), variant:"warning"})
+        }
+        setOldPassword("")
+        setNewPassword("")
+        setNewPasswordConfirm("")
+    };
+
+    const handleDeleteUser = async () => {
+        const response = await fetch(`/api/user/${user?.id}`, {
+            method: "DELETE",
+            credentials: "include",
+            headers: {"Content-Type": "application/json"},
+
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+            setDeleteAccountInfo({message: data.message, variant:"success"})
+
+            setTimeout(() => {
+                navigate("/login");
+            }, 3000)
+        }
+        else {
+            setDeleteAccountInfo({message: getDetailStringOrDefault(data.detail, "Unknown error"), variant: "warning"})
+        }
+    };
 
     return (
         <div className="container py-5">
@@ -47,6 +112,7 @@ function AccountSettingsPage() {
                             value={newUsername}
                             onChange={(e) => setNewUsername(e.target.value)}
                         />
+                        <InformationText infoText={changeUsernameInfo} />
                         <Button
                             variant="primary"
                             label={<><i className="bi bi-check-lg" /> Save Username</>}
@@ -78,6 +144,7 @@ function AccountSettingsPage() {
                             value={newPasswordConfirm}
                             onChange={(e) => setNewPasswordConfirm(e.target.value)}
                         />
+                        <InformationText infoText={changePasswordInfo} />
                         <Button
                             variant="primary"
                             label={<><i className="bi bi-check-lg" /> Save Password</>}
@@ -92,6 +159,7 @@ function AccountSettingsPage() {
                                 Deleting your account is permanent and cannot be undone.
                                 All your data will be lost.
                         </p>
+                        <InformationText infoText={deleteAccountInfo} />
                         <Button
                             variant="danger"
                             label={<><i className="bi bi-trash-fill" /> Delete Account</>}

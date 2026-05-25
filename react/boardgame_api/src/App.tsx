@@ -4,8 +4,6 @@ import AppAuth from "./layout/AppAuth.tsx";
 import "./styles/App.css"
 import AppContent from "./layout/AppContent.tsx";
 
-
-
 function App() {
     return (
         <AuthProvider>

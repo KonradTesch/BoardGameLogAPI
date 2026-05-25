@@ -6,7 +6,6 @@ interface WideCardProps {
 }
 
 function WideCard(props: WideCardProps){
-
     return (
         <div className="card" style={{minWidth: "20rem"}}>
             <h5 className="card-header">{props.title}</h5>
