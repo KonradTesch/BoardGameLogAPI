@@ -9,7 +9,7 @@ from app.service.auth_logic import get_current_user
 from dotenv import load_dotenv
 from os import getenv
 from app.service.auth_logic import create_access_token
-from app.schemas.auth import RegisterRequest
+from app.schemas.auth import RegisterRequest, AuthUserResponse
 
 router = APIRouter(
     prefix="/auth",
@@ -44,7 +44,7 @@ async def register(body: RegisterRequest):
     except NotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
-@router.get("/user", status_code=status.HTTP_200_OK)
+@router.get("/user", response_model=AuthUserResponse, status_code=status.HTTP_200_OK)
 async def get_auth_user(current_user: user_dependency):
         return current_user
 

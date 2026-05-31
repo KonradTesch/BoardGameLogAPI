@@ -26,7 +26,7 @@ class UserDataManager:
     def __init__(self):
         pass
 
-    def create_user(self, username: str, password: str):
+    def create_user(self, username: str, password: str) -> User:
         user = session.query(User).filter(User.username == username).first()
         if user:
             raise UnprocessableException(f"Username '{username}' already exists")
@@ -39,7 +39,7 @@ class UserDataManager:
 
         return new_user
 
-    def authenticate_user(self, username: str, password: str):
+    def authenticate_user(self, username: str, password: str) -> User:
         user = session.query(User).filter(User.username == username).first()
 
         if not user:
@@ -70,7 +70,7 @@ class UserDataManager:
         session.delete(user_to_delete)
         session.commit()
 
-    def validate_user(self, user_id:int):
+    def validate_user(self, user_id:int) -> User:
         user = session.query(User).filter(User.id == user_id).first()
 
         if not user:
@@ -78,10 +78,10 @@ class UserDataManager:
 
         return user
 
-    def get_all_users(self):
+    def get_all_users(self) -> list[User]:
         return session.query(User).all()
 
-    def get_user_by_id(self, user_id: int):
+    def get_user_by_id(self, user_id: int) -> User:
         user = self.validate_user(user_id)
 
         return user
@@ -93,7 +93,7 @@ class PlayerDataManager:
         session.add(new_player)
         session.commit()
 
-    def validate_player(self, player_id:int):
+    def validate_player(self, player_id:int) -> Player:
         player = session.query(Player).filter(Player.id == player_id).first()
 
         if not player:
@@ -101,7 +101,7 @@ class PlayerDataManager:
 
         return player
 
-    def get_player_by_id(self, player_id: int):
+    def get_player_by_id(self, player_id: int) -> Player:
         player = self.validate_player(player_id)
         return player
 
@@ -120,7 +120,7 @@ class PlayerDataManager:
         player.name = new_name
         session.commit()
 
-    def delete_player(self, player_id: int):
+    def delete_player(self, player_id: int) -> bool:
         player_to_delete = session.query(Player).filter(Player.id == player_id)
         if player_to_delete:
             player_to_delete.delete()
@@ -128,7 +128,7 @@ class PlayerDataManager:
             return True
         return False
 
-    def get_player_scores_for_game(self, player_id: int, game_id: int):
+    def get_player_scores_for_game(self, player_id: int, game_id: int) -> list[Session_Player]:
         player_scores = (session.query(Session_Player)
                          .join(Session_Player.session)
                          .filter(Session_Player.player_id == player_id)
@@ -138,7 +138,7 @@ class PlayerDataManager:
 
         return player_scores
 
-    def get_player_scores_all(self, player_id: int):
+    def get_player_scores_all(self, player_id: int) -> list[Session_Player]:
         player_scores = (session.query(Session_Player)
                          .filter(Session_Player.player_id == player_id)
                          .all()
@@ -146,7 +146,7 @@ class PlayerDataManager:
 
         return player_scores
 
-    def get_player_games(self, player_id: int):
+    def get_player_games(self, player_id: int) -> list[Boardgame]:
         player_games = (session.query(Boardgame)
                         .join(Game_Session, Boardgame.sessions)
                         .join(Session_Player, Game_Session.session_players)
@@ -169,7 +169,7 @@ class GameDataManager:
         session.add(new_game)
         session.commit()
 
-    def get_all_games(self, sort: bool):
+    def get_all_games(self, sort: bool) -> list[Boardgame]:
         games = session.query(Boardgame).all()
         if sort:
             games = sorted(games, key=lambda game: game.title)
@@ -241,7 +241,7 @@ class GameDataManager:
                     session.delete(session_player)
             session.commit()
 
-    def delete_session(self, session_id: int):
+    def delete_session(self, session_id: int) -> bool:
         session_to_delete = session.query(Game_Session).filter(Game_Session.id == session_id).first()
         if session_to_delete:
             session.delete(session_to_delete)
@@ -249,11 +249,11 @@ class GameDataManager:
             return True
         return False
 
-    def get_session_by_id(self, session_id: int):
+    def get_session_by_id(self, session_id: int) -> Game_Session | None:
         game_session = session.query(Game_Session).filter(Game_Session.id == session_id).first()
         return game_session
 
-    def get_user_game_session_by_game(self, user_id, game_id):
+    def get_user_game_session_by_game(self, user_id, game_id) -> list[Game_Session]:
         game_sessions = (session.query(Game_Session)
                       .filter(Game_Session.game_id == game_id)
                       .filter(Game_Session.user_id == user_id)
@@ -262,7 +262,7 @@ class GameDataManager:
 
         return game_sessions
 
-    def get_user_game_sessions_all(self, user_id):
+    def get_user_game_sessions_all(self, user_id) -> list[Game_Session]:
         game_sessions = (session.query(Game_Session)
                          .filter(Game_Session.user_id == user_id)
                          .all()
@@ -270,7 +270,7 @@ class GameDataManager:
 
         return game_sessions
 
-    def get_user_games(self, user_id):
+    def get_user_games(self, user_id) -> list[Boardgame]:
         user_games = (session.query(Boardgame)
                         .join(Boardgame.sessions)
                         .filter(Game_Session.user_id == user_id)
@@ -279,10 +279,3 @@ class GameDataManager:
                         )
 
         return user_games
-
-
-pass
-
-
-
-

@@ -75,7 +75,6 @@ function AccountSettingsPage() {
             method: "DELETE",
             credentials: "include",
             headers: {"Content-Type": "application/json"},
-
         });
 
         const data = await response.json();

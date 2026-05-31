@@ -9,27 +9,27 @@ function AppAuth() {
 
     const { setUser, setIsLoading } = useContext(AuthContext)!;
 
-useEffect(() => {
-    const auth_user = async () => {
-        setIsLoading(true);
-        const response = await fetch("/api/auth/user", {
-        method: "GET",
-        });
-        setIsLoading(false);
-        if (response.ok){
-            const data = await response.json();
-            setUser(data)
-            if (location.pathname === "/login") {
-                navigate(`/user/${data.id}/dashboard`)
+    useEffect(() => {
+        const auth_user = async () => {
+            const response = await fetch("/api/auth/user", {
+            method: "GET",
+            });
+            setIsLoading(false);
+            if (response.ok){
+                const data = await response.json();
+                setUser(data)
+                if (location.pathname === "/login") {
+                    navigate(`/user/${data.id}/dashboard`)
+                }
+            }
+            else
+            {
+                setUser(null);
+                navigate("/login");
             }
         }
-        else
-        {
-            setUser(null);
-        }
-    }
-    void auth_user();
-}, []);
+        void auth_user();
+    }, []);
 
     return <></>;
 }

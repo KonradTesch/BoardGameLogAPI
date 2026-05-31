@@ -8,10 +8,11 @@ from app.repositories.db_manager import GameDataManager, UserDataManager
 from .index_router import check_user
 from app.custom_exceptions import NotFoundException
 from .user_router import user_dependency, formatted_date
+from app.schemas.sessions import GameSession
 
 router = APIRouter(
-    prefix="/user/{user_id}/session",
-    tags=["session"]
+    prefix="/user/{user_id}/sessions",
+    tags=["sessions"]
 )
 
 templates = Jinja2Templates(directory="templates")
@@ -21,10 +22,13 @@ game_manager = GameDataManager()
 user_manager = UserDataManager()
 
 
-class GameSession(BaseModel):
-    boardgame_id: int
-    date: str
-    players: list[dict]
+@router.get("/", response_model=list[GameSession], response_model_by_alias=True)
+def get_all_sessions_of_user(user_id: int, current_user: user_dependency):
+    check_user(user_id, current_user)
+
+    sessions = game_manager.get_user_game_sessions_all(user_id)
+
+    return sessions
 
 @router.get("/{session_id}")
 def session_details(user_id: int, session_id: int, request: Request, current_user: user_dependency):
