@@ -1,1 +1,1 @@
-export type BootstrapVariant = "primary" | "secondary" | "danger" | "warning" | "success" | "info";
+export type BootstrapVariant = "primary" | "secondary" | "danger" | "warning" | "success" | "info" | "link";

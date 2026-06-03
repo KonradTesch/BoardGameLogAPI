@@ -1,15 +1,15 @@
 import type {ReactNode} from "react";
 import type {BootstrapVariant} from "../types/BootstrapVariant.ts";
 
-interface SubmitButtonProps{
-    label: string | ReactNode;
+interface ButtonProps{
+    label: ReactNode;
     onClick?: () => void;
     variant?: BootstrapVariant;
     disabled?: boolean;
     [key: string]: unknown;
 }
 
-function Button({label, onClick, variant = "primary", disabled, ...rest}: SubmitButtonProps) {
+function Button({label, onClick, variant = "primary", disabled, ...rest}: ButtonProps) {
 
     return (<button
         type="button"

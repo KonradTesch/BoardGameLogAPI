@@ -1,21 +1,23 @@
-import InfoCard from "../components/InfoCard.tsx";
 import '../styles/DashboardPage.css';
-import * as React from "react";
 import PageContainer from "../components/PageContainer.tsx";
 import FormCard from "../components/FormCard.tsx";
-import {useContext, useEffect, useState} from "react";
+import {useContext, useEffect, useRef, useState} from "react";
 import {AuthContext} from "../context/AuthContext.tsx";
 import type {GameSession} from "../types/GameSession.ts";
 import type {InfoText} from "../types/InfoText.ts";
 import InformationText from "../components/InformationText.tsx";
+import SessionList from "../components/SessionList.tsx";
 
 function DashboardPage() {
 
     const { user } = useContext(AuthContext)!;
-    const { isLoading } = useContext(AuthContext)!;
 
     const [ sessions, setSessions] = useState<GameSession[] | null>(null)
+    const [ sessionsToDelete, setSessionsToDelete ] = useState<GameSession[]>([]);
     const [sessionsInfo, setSessionsInfo] = useState<InfoText>({message:""})
+
+    const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const sessionsToDeleteRef = useRef<GameSession[]>([]);
 
     const getGameSession = async () => {
         const game_session = await fetch(`/api/user/${user?.id}/sessions/`, {
@@ -30,7 +32,6 @@ function DashboardPage() {
         else {
             setSessionsInfo({message:"Error loading game sessions.", variant: "warning"})
         }
-
     }
 
     useEffect(() => {
@@ -39,30 +40,65 @@ function DashboardPage() {
         }
     }, [user]);
 
+
+
+    const handleDeletedSession = (session: GameSession) => {
+        sessionsToDeleteRef.current = [...sessionsToDeleteRef.current, session];
+        setSessionsToDelete(prev =>  [...prev, session]);
+
+        if (timerRef.current) {
+            clearTimeout(timerRef.current);
+        }
+
+        timerRef.current = setTimeout(async () => {
+            await deleteSessions(sessionsToDeleteRef.current);
+            setSessionsToDelete([]);
+            sessionsToDeleteRef.current = [];
+        }, 10000)
+    };
+
+    const handleCancelDelete = () => {
+        if (timerRef.current) {
+            clearTimeout(timerRef.current);
+        }
+        setSessionsToDelete([]);
+        sessionsToDeleteRef.current = [];
+    };
+
+    const deleteSessions = async (pendingSessions: GameSession[]) => {
+        let errors: number[] = []
+        for (const session of pendingSessions) {
+            const response = await fetch(`/api/user/${user?.id}/sessions/${session.id}`, {
+                method: "DELETE",
+                credentials: "include"
+            })
+
+            if (response.ok) {
+                setSessions(prev => prev?.filter((x) => x !== session) ?? null)
+            }
+            else {
+                errors = [...errors, session.id]
+            }
+        }
+        if (errors.length > 0) {
+            setSessionsInfo({message: `Error deleting sessions. IDs:(${errors.join(", ")}`})
+        }
+        else {
+            setSessionsInfo({message: ""})
+        }
+    }
+
     return (
         <PageContainer>
             <FormCard header={<><i className="bi bi-calendar-week-fill"></i> Game Sessions</>}>
+                <SessionList
+                    sessions={sessions}
+                    sessionsToDelete={sessionsToDelete}
+                    onDelete={handleDeletedSession}
+                    waitForLoading={true} />
+                {sessionsToDelete.length > 0 && <div className="d-flex justify-content-center"><div className="alert alert-warning m-0 py-0" role="alert">You're about to delete {sessionsToDelete.length} session{sessionsToDelete.length > 1 && "s"}. <button className="btn btn-link alert-link" onClick={handleCancelDelete}>Undo</button></div></div>}
                 {sessionsInfo.message && <InformationText infoText={sessionsInfo} />}
-                <ul className="list-group list-group-flush">
-                    {isLoading ? <p>Lädt...</p> : sessions?.map((session: GameSession, index) =>(
-                        <li className="list-group-item" key={index}>{session.date}</li>
-                        ))}
-                </ul>
             </FormCard>
-            <FormCard header={<><i className="bi bi-calendar-week-fill"></i> Game Sessions</>}>
-                <div className="info-card-grid" style={{"--card-width": "14rem"} as React.CSSProperties}>
-                    <InfoCard
-                        body="Some quick example text to build on the card title and make up the bulk of the card’s content. Lorem ipsum und so weiter."/>
-                    <InfoCard body="Some quick example text to build on the card title and make up the bulk of the card’s content. "/>
-                    <InfoCard body="Some quick example "/>
-                    <InfoCard body="Some quick example text to build on the card title and make up the bulk of the card’s content."/>
-                    <InfoCard body="Some quick example text to build on the card title and make up the bulk of the card’s content."/>
-                    <InfoCard body="Some quick example text to build on the card title and make up the bulk of the card’s content."/>
-                    <InfoCard body="Some quick example text to build on the card title and make up the bulk of the card’s content."/>
-                    <InfoCard body="Some quick example text to build on the card title and make up the bulk of the card’s content."/>
-                </div>
-            </FormCard>
-
         </PageContainer>
 
     );

@@ -19,6 +19,7 @@ class SessionPlayer(ResponseModel):
         return orm_player_relationship
 
 class GameSession(ResponseModel):
+    id: int
     date: datetime.date
     game_name: str
     players: list[SessionPlayer]
@@ -28,6 +29,7 @@ class GameSession(ResponseModel):
     def extract_orm_game_name(cls, orm_session):
         if hasattr(orm_session, "game"):
             return {
+                "id": orm_session.id,
                 "date": orm_session.date,
                 "game_name": orm_session.game.title,
                 "players": orm_session.session_players

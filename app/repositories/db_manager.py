@@ -241,13 +241,10 @@ class GameDataManager:
                     session.delete(session_player)
             session.commit()
 
-    def delete_session(self, session_id: int) -> bool:
-        session_to_delete = session.query(Game_Session).filter(Game_Session.id == session_id).first()
-        if session_to_delete:
-            session.delete(session_to_delete)
-            session.commit()
-            return True
-        return False
+    def delete_session(self, session_id: int):
+        session_to_delete = self.validate_session(session_id)
+        session.delete(session_to_delete)
+        session.commit()
 
     def get_session_by_id(self, session_id: int) -> Game_Session | None:
         game_session = session.query(Game_Session).filter(Game_Session.id == session_id).first()

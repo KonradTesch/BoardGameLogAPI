@@ -96,6 +96,9 @@ def update_session(user_id: int, session_id: int, session: dict, current_user: u
 
 @router.delete("/{session_id}")
 def delete_session(user_id: int, session_id: int, current_user: user_dependency):
-    check_user(user_id, current_user)
+    try:
+        check_user(user_id, current_user)
 
-    game_manager.delete_session(session_id)
+        game_manager.delete_session(session_id)
+    except NotFoundException as e:
+        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
