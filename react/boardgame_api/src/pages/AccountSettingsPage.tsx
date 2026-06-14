@@ -150,7 +150,12 @@ function AccountSettingsPage() {
             </FormCard>
 
             {/* Danger Zone */}
-            <ConfirmModal id="confirmAccountDeleteModal" header="Are you sure?" body="Deleting you Account deletes all data irrevocable." onSubmit={handleDeleteUser} />
+            <ConfirmModal
+                id="confirmAccountDeleteModal"
+                header="Are you sure?"
+                body="Deleting you Account deletes all data irrevocable."
+                onSubmit={handleDeleteUser}
+            />
             <DangerCard header="Danger Zone">
                 <p className="text-body-secondary">
                         Deleting your account is permanent and cannot be undone.

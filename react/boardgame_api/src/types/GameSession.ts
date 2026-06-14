@@ -1,4 +1,4 @@
-interface SessionPlayer {
+export interface SessionPlayer {
     name: string;
     score: number;
     winner: boolean;

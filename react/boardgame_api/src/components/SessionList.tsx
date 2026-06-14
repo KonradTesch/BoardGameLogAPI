@@ -7,14 +7,13 @@ interface SessionListProps {
     sessions: GameSession[] | null;
     sessionsToDelete: GameSession[];
     onDelete: (session: GameSession) => void;
+    onOpenDetails: (session: GameSession) => void;
     waitForLoading?: boolean;
 }
 
-function SessionList({sessions, sessionsToDelete, onDelete, waitForLoading = false}: SessionListProps) {
+function SessionList({sessions, sessionsToDelete, onDelete, onOpenDetails, waitForLoading = false}: SessionListProps) {
 
     const { isLoading } = useContext(AuthContext)!;
-
-
 
     return (
         <ul className="list-group list-group-flush">
@@ -24,6 +23,7 @@ function SessionList({sessions, sessionsToDelete, onDelete, waitForLoading = fal
                         index={index}
                         session={session}
                         onDelete={() => onDelete(session)}
+                        onOpenDetails={() => onOpenDetails(session)}
                     />)
                     ))}
         </ul>
