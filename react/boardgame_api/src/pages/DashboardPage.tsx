@@ -1,14 +1,14 @@
 import '../styles/DashboardPage.css';
 import PageContainer from "../components/PageContainer.tsx";
-import FormCard from "../components/FormCard.tsx";
-import Button from "../components/Button.tsx";
+import FormCard from "../components/Cards/FormCard.tsx";
+import Button from "../components/Button/Button.tsx";
 import {useContext, useEffect, useRef, useState} from "react";
 import {AuthContext} from "../context/AuthContext.tsx";
 import type {GameSession} from "../types/GameSession.ts";
 import type {InfoText} from "../types/InfoText.ts";
-import InformationText from "../components/InformationText.tsx";
-import SessionList from "../components/SessionList.tsx";
-import ContentModal from "../components/ContentModal.tsx";
+import InformationText from "../components/Text/InformationText.tsx";
+import SessionList from "../components/Lists/SessionList.tsx";
+import ContentModal from "../components/Modals/ContentModal.tsx";
 import SessionDetails from "../components/SessionDetails.tsx";
 
 function DashboardPage() {

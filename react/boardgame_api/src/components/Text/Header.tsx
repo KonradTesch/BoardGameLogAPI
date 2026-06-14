@@ -1,7 +1,7 @@
 import { useState, useEffect, useContext} from "react";
-import {AuthContext} from "../context/AuthContext.tsx";
-import NavDropdown from "./NavDropdown.tsx";
-import Button from "./Button.tsx";
+import {AuthContext} from "../../context/AuthContext.tsx";
+import NavDropdown from "../NavDropdown.tsx";
+import Button from "../Button/Button.tsx";
 import {useNavigate} from "react-router-dom";
 
 function Header() {

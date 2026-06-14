@@ -1,7 +1,7 @@
 import { createPortal} from "react-dom";
 import type {ReactNode} from "react";
-import Button from "./Button.tsx";
-import type {BootstrapVariant} from "../types/BootstrapVariant.ts";
+import Button from "../Button/Button.tsx";
+import type {BootstrapVariant} from "../../types/BootstrapVariant.ts";
 
 interface ConfirmModalProps{
     id: string;

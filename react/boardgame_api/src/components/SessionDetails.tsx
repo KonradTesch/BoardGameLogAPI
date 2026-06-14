@@ -1,6 +1,6 @@
 import type {GameSession} from "../types/GameSession.ts";
-import FormCard from "./FormCard.tsx";
-import ScoreList from "./ScoreList.tsx";
+import FormCard from "./Cards/FormCard.tsx";
+import ScoreList from "./Lists/ScoreList.tsx";
 
 interface SessionDetailsProps {
     session: GameSession;

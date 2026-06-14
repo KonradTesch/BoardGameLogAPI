@@ -1,4 +1,4 @@
-import type {SessionPlayer} from "../types/GameSession.ts";
+import type {SessionPlayer} from "../../types/GameSession.ts";
 
 interface ScoreListProps {
     players: SessionPlayer[];

@@ -1,4 +1,4 @@
-import type {InfoText} from "../types/InfoText.ts";
+import type {InfoText} from "../../types/InfoText.ts";
 
 interface InformationTextProps {
     infoText: InfoText;

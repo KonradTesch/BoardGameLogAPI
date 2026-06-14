@@ -1,5 +1,5 @@
 import {Navigate, Route, Routes} from "react-router-dom";
-import Header from "../components/Header.tsx";
+import Header from "../components/Text/Header.tsx";
 import LoginPage from "../pages/LoginPage.tsx";
 import DashboardPage from "../pages/DashboardPage.tsx";
 import {useContext} from "react";

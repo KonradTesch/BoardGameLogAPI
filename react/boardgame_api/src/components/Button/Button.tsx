@@ -1,5 +1,5 @@
 import type {ReactNode} from "react";
-import type {BootstrapVariant} from "../types/BootstrapVariant.ts";
+import type {BootstrapVariant} from "../../types/BootstrapVariant.ts";
 
 interface ButtonProps{
     label: ReactNode;

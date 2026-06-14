@@ -1,5 +1,5 @@
 import type {GameSession} from "../types/GameSession.ts";
-import IconButton from "./IconButton.tsx";
+import IconButton from "./Button/IconButton.tsx";
 
 interface SessionListItemProps {
     index: number

@@ -1,10 +1,10 @@
 import InputField from "../components/InputField.tsx";
-import Button from "../components/Button.tsx";
-import LoginCard from "../components/LoginCard.tsx";
+import Button from "../components/Button/Button.tsx";
+import LoginCard from "../components/Cards/LoginCard.tsx";
 import {useContext, useEffect, useState} from "react";
 import {AuthContext} from "../context/AuthContext.tsx";
 import {useNavigate} from "react-router-dom";
-import InformationText from "../components/InformationText.tsx";
+import InformationText from "../components/Text/InformationText.tsx";
 import type {InfoText} from "../types/InfoText.ts";
 import {getDetailStringOrDefault} from "../util/util.ts";
 
