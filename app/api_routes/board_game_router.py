@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 from sqlalchemy.orm import Session
 from fastapi.responses import JSONResponse
-from app.repositories.db_manager import UserDataManager
 from .index_router import check_user
 from app.custom_exceptions import UnprocessableException, NotFoundException
 from .user_router import user_dependency

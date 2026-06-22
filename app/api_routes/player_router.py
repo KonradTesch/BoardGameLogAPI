@@ -1,8 +1,12 @@
-from fastapi import APIRouter, HTTPException, status, Request
+from fastapi import APIRouter, HTTPException, status, Request, Depends
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse
 from starlette.status import HTTP_400_BAD_REQUEST, HTTP_201_CREATED, HTTP_200_OK
-from app.repositories.db_manager import PlayerDataManager, UserDataManager
+from sqlalchemy.orm import Session
+from typing import Annotated
+from app.database import get_db
+from app.repositories.player_repository import PlayerRepository
+from app.repositories.user_repository import UserRepository
 from .index_router import check_user
 from app.custom_exceptions import NotFoundException, UnprocessableException
 from app.service.stats_calculator import get_player_stats
@@ -15,15 +19,22 @@ router = APIRouter(
 
 templates = Jinja2Templates(directory="templates")
 
-player_manager = PlayerDataManager()
-user_manager = UserDataManager()
+def get_player_repo(db: Session = Depends(get_db)):
+    return PlayerRepository(db)
+
+player_repo_dependency = Annotated[PlayerRepository, Depends(get_player_repo)]
+
+def get_user_repo(db: Session = Depends(get_db)):
+    return UserRepository(db)
+
+user_repo_dependency = Annotated[UserRepository, Depends(get_user_repo)]
 
 
 @router.post("/")
-def create_player(user_id: int,player_name: str, current_user: user_dependency):
+def create_player(user_id: int,player_name: str, current_user: user_dependency, player_repo: player_repo_dependency, user_repo: user_repo_dependency):
     check_user(user_id, current_user)
 
-    user = user_manager.get_user_by_id(user_id)
+    user = user_repo.get_user_by_id(user_id)
     players = user.players
     for player in players:
         if player.name == player_name:
@@ -32,7 +43,7 @@ def create_player(user_id: int,player_name: str, current_user: user_dependency):
                 content={"error": "Player exists already"}
             )
 
-    player_manager.create_player(user, player_name)
+    player_repo.create_player(user, player_name)
     return JSONResponse(
         status_code=HTTP_201_CREATED,
         content={
@@ -41,14 +52,14 @@ def create_player(user_id: int,player_name: str, current_user: user_dependency):
 
 
 @router.patch("/")
-def update_player(user_id: int, player_data: dict, current_user: user_dependency):
+def update_player(user_id: int, player_data: dict, current_user: user_dependency, player_repo: player_repo_dependency):
     check_user(user_id, current_user)
 
     player_id = player_data.get("player_id")
     player_name = player_data.get("player_name")
 
     try:
-        player_manager.update_player(user_id, player_id, player_name)
+        player_repo.update_player(user_id, player_id, player_name)
         return JSONResponse(
             status_code=HTTP_200_OK,
             content={"message": "Player successfully updated"}
@@ -60,21 +71,21 @@ def update_player(user_id: int, player_data: dict, current_user: user_dependency
 
 
 @router.delete("/")
-def delete_player(user_id: int, player_id, current_user: user_dependency):
+def delete_player(user_id: int, player_id, current_user: user_dependency, player_repo: player_repo_dependency):
     try:
         check_user(user_id, current_user)
 
-        player_manager.delete_player(player_id)
+        player_repo.delete_player(player_id)
     except NotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
 @router.get("/{player_id}/stats")
-def show_player_stats(user_id: int, player_id: int, request: Request, current_user: user_dependency):
+def show_player_stats(user_id: int, player_id: int, request: Request, current_user: user_dependency, player_repo: player_repo_dependency, db: Session = Depends(get_db)):
     check_user(user_id, current_user)
     try:
-        player = player_manager.get_player_by_id(player_id)
-        player_stats = get_player_stats(player_id)
+        player = player_repo.get_player_by_id(player_id)
+        player_stats = get_player_stats(db, player_id)
 
         context= {
             "request": request,

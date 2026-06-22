@@ -3,8 +3,10 @@ from fastapi import APIRouter, Depends, Response, HTTPException, Cookie
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
 from starlette import status
+from sqlalchemy.orm import Session
 from app.custom_exceptions import UnprocessableException, NotFoundException, UnauthorizedException
-from app.repositories.db_manager import UserDataManager
+from app.database import get_db
+from app.repositories.user_repository import UserRepository
 from app.service.auth_logic import get_current_user
 from dotenv import load_dotenv
 from os import getenv
@@ -29,12 +31,15 @@ def get_user(access_token: str = Cookie(None)) -> dict[str, Any] :
 
 user_dependency = Annotated[dict, Depends(get_user)]
 
-user_manager = UserDataManager()
+def get_user_repo(db: Session = Depends(get_db)):
+    return UserRepository(db)
+
+user_repo_dependency = Annotated[UserRepository, Depends(get_user_repo)]
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
-async def register(body: RegisterRequest):
+async def register(body: RegisterRequest, repo: user_repo_dependency):
     try:
-        user_manager.create_user(body.name, body.password)
+        repo.create_user(body.name, body.password)
         return {
             "message": "Registration successful",
         }
@@ -49,9 +54,9 @@ async def get_auth_user(current_user: user_dependency):
         return current_user
 
 @router.post("/token")
-async def login_for_access_token(response: Response, form_data: OAuth2PasswordRequestForm = Depends()):
+async def login_for_access_token(repo: user_repo_dependency, response: Response, form_data: OAuth2PasswordRequestForm = Depends()):
     try:
-        user = user_manager.authenticate_user(form_data.username, form_data.password)
+        user = repo.authenticate_user(form_data.username, form_data.password)
 
         token = create_access_token(user.username, user.id)
 

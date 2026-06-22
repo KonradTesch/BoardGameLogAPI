@@ -5,7 +5,10 @@ from pydantic import BaseModel, ConfigDict
 from pydantic.alias_generators import to_camel
 from typing import Annotated
 from datetime import datetime
-from app.repositories.db_manager import UserDataManager, GameDataManager
+from sqlalchemy.orm import Session
+from app.database import get_db
+from app.repositories.user_repository import UserRepository
+from app.repositories.game_session_repository import GameSessionRepository
 from app.service.auth_logic import get_current_user
 from app.service.stats_calculator import get_game_stats
 from .index_router import check_user
@@ -20,10 +23,6 @@ router = APIRouter(
 
 templates = Jinja2Templates(directory="templates")
 
-user_manager = UserDataManager()
-game_manager = GameDataManager()
-
-
 def get_user(access_token: str = Cookie(None)):
     try:
         return get_current_user(access_token)
@@ -32,6 +31,16 @@ def get_user(access_token: str = Cookie(None)):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail=str(e))
 
 user_dependency = Annotated[dict, Depends(get_user)]
+
+def get_user_repo(db: Session = Depends(get_db)):
+    return UserRepository(db)
+
+user_repo_dependency = Annotated[UserRepository, Depends(get_user_repo)]
+
+def get_game_session_repo(db: Session = Depends(get_db)):
+    return GameSessionRepository(db)
+
+game_session_repo_dependency = Annotated[GameSessionRepository, Depends(get_game_session_repo)]
 
 def formatted_date(date_string):
     if isinstance(date_string, str):
@@ -43,11 +52,11 @@ def formatted_date(date_string):
 templates.env.filters['formatted_date'] = formatted_date
 
 @router.get("/{user_id}")
-def user_home(user_id: int, request: Request, current_user: user_dependency):
+def user_home(user_id: int, request: Request, current_user: user_dependency, user_repo: user_repo_dependency, game_repo: game_session_repo_dependency):
     check_user(user_id, current_user)
 
-    user = user_manager.get_user_by_id(user_id)
-    games = game_manager.get_all_games(sort = True)
+    user = user_repo.get_user_by_id(user_id)
+    games = game_repo.get_all_games(sort = True)
 
     context = {
         "request": request,
@@ -59,10 +68,10 @@ def user_home(user_id: int, request: Request, current_user: user_dependency):
 
 
 @router.patch("/{user_id}/username")
-def change_username(user_id: int, body: ChangeUsernameRequest, current_user: user_dependency):
+def change_username(user_id: int, body: ChangeUsernameRequest, current_user: user_dependency, user_repo: user_repo_dependency):
     check_user(user_id, current_user)
     new_username = body.get("new_username")
-    user_manager.update_username(user_id, body["new_username"])
+    user_repo.update_username(user_id, body["new_username"])
     return JSONResponse( status_code=status.HTTP_200_OK,
         content={
             "message": "Username successfully updated",
@@ -72,11 +81,11 @@ def change_username(user_id: int, body: ChangeUsernameRequest, current_user: use
 
 
 @router.patch("/{user_id}/password")
-def change_password(user_id: int, body: PasswordChangeRequest, current_user: user_dependency):
+def change_password(user_id: int, body: PasswordChangeRequest, current_user: user_dependency, user_repo: user_repo_dependency):
     try:
         check_user(user_id, current_user)
 
-        user_manager.change_password(
+        user_repo.change_password(
             user_id,
             body.old_password,
             body.new_password
@@ -95,11 +104,11 @@ def change_password(user_id: int, body: PasswordChangeRequest, current_user: use
 
 
 @router.delete("/{user_id}")
-def delete_account(user_id: int, response: Response, current_user: user_dependency):
+def delete_account(user_id: int, response: Response, current_user: user_dependency, user_repo: user_repo_dependency):
     try:
         check_user(user_id, current_user)
 
-        user_manager.delete_user(user_id)
+        user_repo.delete_user(user_id)
 
         response = JSONResponse(
             status_code=status.HTTP_200_OK,
@@ -116,19 +125,19 @@ def delete_account(user_id: int, response: Response, current_user: user_dependen
 
 
 @router.get("/{user_id}/boardgames", response_model=list[BoardGameResponse], response_model_by_alias=True)
-def user_all_board_games(user_id: int, current_user: user_dependency):
+def user_all_board_games(user_id: int, current_user: user_dependency, game_repo: game_session_repo_dependency):
     check_user(user_id, currentUser)
 
-    games = game_manager.get_all_games(sort = True)
+    games = game_repo.get_all_games(sort = True)
 
     return games
 
 
 @router.get("/{user_id}/boardgames/stats")
-def user_all_board_game_stats(user_id: int, request: Request, current_user: user_dependency):
+def user_all_board_game_stats(user_id: int, request: Request, current_user: user_dependency, db: Session = Depends(get_db)):
     check_user(user_id, current_user)
 
-    game_stats = get_game_stats(user_id)
+    game_stats = get_game_stats(db, user_id)
 
     context = {
         "request": request,
