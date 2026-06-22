@@ -2,7 +2,7 @@ from .base import ResponseModel
 from pydantic import model_validator
 import datetime
 
-class SessionPlayer(ResponseModel):
+class SessionPlayerResponse(ResponseModel):
     name: str
     score: int
     winner: bool
@@ -18,11 +18,11 @@ class SessionPlayer(ResponseModel):
             }
         return orm_player_relationship
 
-class GameSession(ResponseModel):
+class GameSessionResponse(ResponseModel):
     id: int
     date: datetime.date
     game_name: str
-    players: list[SessionPlayer]
+    players: list[SessionPlayerResponse]
 
     @model_validator(mode="before")
     @classmethod

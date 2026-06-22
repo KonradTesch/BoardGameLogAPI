@@ -1,6 +1,7 @@
 import {useContext, useEffect} from "react";
 import {AuthContext} from "../context/AuthContext.tsx";
 import {useLocation, useNavigate} from "react-router-dom";
+import {ROUTES} from "../types/routes.ts";
 
 function AppAuth() {
     const navigate = useNavigate();
@@ -19,13 +20,13 @@ function AppAuth() {
                 const data = await response.json();
                 setUser(data)
                 if (location.pathname === "/login") {
-                    navigate(`/user/${data.id}/dashboard`)
+                    navigate(ROUTES.login.to)
                 }
             }
             else
             {
                 setUser(null);
-                navigate("/login");
+                navigate(ROUTES.login.to);
             }
         }
         void auth_user();

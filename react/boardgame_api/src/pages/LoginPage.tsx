@@ -7,6 +7,7 @@ import {useNavigate} from "react-router-dom";
 import InformationText from "../components/Text/InformationText.tsx";
 import type {InfoText} from "../types/InfoText.ts";
 import {getDetailStringOrDefault} from "../util/util.ts";
+import {ROUTES} from "../types/routes.ts";
 
 function LoginPage() {
     const navigate = useNavigate()
@@ -66,7 +67,7 @@ function LoginPage() {
             setInfoMessage({message: data.message, variant: "success"})
 
             setUser({id: data.id, name: data.name});
-            navigate(`/user/${data.id}/dashboard`)
+            navigate(ROUTES.dashboard.to(data.id));
         }
         else {
             setInfoMessage({message: data.detail, variant: "warning"})

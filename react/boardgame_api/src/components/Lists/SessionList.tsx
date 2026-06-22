@@ -8,10 +8,11 @@ interface SessionListProps {
     sessionsToDelete: GameSession[];
     onDelete: (session: GameSession) => void;
     onOpenDetails: (session: GameSession) => void;
+    onEditSession: (session: GameSession) => void;
     waitForLoading?: boolean;
 }
 
-function SessionList({sessions, sessionsToDelete, onDelete, onOpenDetails, waitForLoading = false}: SessionListProps) {
+function SessionList({sessions, sessionsToDelete, onDelete, onOpenDetails, onEditSession, waitForLoading = false}: SessionListProps) {
 
     const { isLoading } = useContext(AuthContext)!;
 
@@ -24,6 +25,7 @@ function SessionList({sessions, sessionsToDelete, onDelete, onOpenDetails, waitF
                         session={session}
                         onDelete={() => onDelete(session)}
                         onOpenDetails={() => onOpenDetails(session)}
+                        onEditSession={() => onEditSession(session)}
                     />)
                     ))}
         </ul>

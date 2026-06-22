@@ -11,6 +11,7 @@ from app.service.stats_calculator import get_game_stats
 from .index_router import check_user
 from app.custom_exceptions import UnauthorizedException, NotFoundException
 from app.schemas.user import PasswordChangeRequest, ChangeUsernameRequest
+from app.schemas.board_games import BoardGameResponse
 
 router = APIRouter(
     prefix="/user",
@@ -114,8 +115,17 @@ def delete_account(user_id: int, response: Response, current_user: user_dependen
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
-@router.get("/{user_id}/stats/games")
-def user_game_stats(user_id: int, request: Request, current_user: user_dependency):
+@router.get("/{user_id}/boardgames", response_model=list[BoardGameResponse], response_model_by_alias=True)
+def user_all_board_games(user_id: int, current_user: user_dependency):
+    check_user(user_id, currentUser)
+
+    games = game_manager.get_all_games(sort = True)
+
+    return games
+
+
+@router.get("/{user_id}/boardgames/stats")
+def user_all_board_game_stats(user_id: int, request: Request, current_user: user_dependency):
     check_user(user_id, current_user)
 
     game_stats = get_game_stats(user_id)

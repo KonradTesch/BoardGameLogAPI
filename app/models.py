@@ -10,7 +10,8 @@ class User(Base):
     hashed_password = Column(String)
 
     players = relationship('Player', back_populates='user')
-    sessions = relationship('Game_Session', back_populates='user')
+    board_games = relationship('BoardGame', back_populates='user')
+    sessions = relationship('GameSession', back_populates='user')
 
 class Player(Base):
     __tablename__ = 'players'
@@ -21,23 +22,25 @@ class Player(Base):
     user = relationship('User', back_populates='players')
     session_players = relationship('Session_Player', back_populates='player')
 
-class Boardgame(Base):
+class BoardGame(Base):
     __tablename__ = 'boardgames'
     id = Column(Integer, primary_key=True, autoincrement=True)
     title = Column(String)
     min_players = Column(Integer)
     max_players = Column(Integer)
+    user_id = Column(Integer, ForeignKey("users.id"))
 
-    sessions = relationship('Game_Session', back_populates='game')
+    user = relationship('User', back_populates='board_games')
+    sessions = relationship('GameSession', back_populates='game')
 
-class Game_Session(Base):
+class GameSession(Base):
     __tablename__ = 'sessions'
     id = Column(Integer, primary_key=True, autoincrement=True)
     game_id = Column(Integer, ForeignKey('boardgames.id'))
     user_id = Column(Integer, ForeignKey('users.id'))
     date = Column(Date)
 
-    game = relationship('Boardgame', back_populates='sessions')
+    game = relationship('BoardGame', back_populates='sessions')
     user = relationship('User', back_populates='sessions')
     session_players = relationship('Session_Player', back_populates='session', cascade='all, delete-orphan')
 
@@ -49,7 +52,7 @@ class Session_Player(Base):
     score = Column(Integer)
     winner = Column(Boolean)
 
-    session = relationship('Game_Session', back_populates='session_players')
+    session = relationship('GameSession', back_populates='session_players')
     player = relationship('Player', back_populates='session_players')
 
 

@@ -11,6 +11,7 @@ import InformationText from "../components/Text/InformationText.tsx";
 import {getDetailStringOrDefault} from "../util/util.ts";
 import {useNavigate} from "react-router-dom";
 import PageContainer from "../components/PageContainer.tsx";
+import {ROUTES} from "../types/routes.ts";
 
 function AccountSettingsPage() {
 
@@ -82,7 +83,7 @@ function AccountSettingsPage() {
             setDeleteAccountInfo({message: data.message, variant:"success"})
 
             setTimeout(() => {
-                navigate("/login");
+                navigate(ROUTES.login.to);
             }, 3000)
         }
         else {

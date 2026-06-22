@@ -10,8 +10,13 @@ import InformationText from "../components/Text/InformationText.tsx";
 import SessionList from "../components/Lists/SessionList.tsx";
 import ContentModal from "../components/Modals/ContentModal.tsx";
 import SessionDetails from "../components/SessionDetails.tsx";
+import {useNavigate} from "react-router-dom";
+import {ROUTES} from "../types/routes.ts";
+import type {BoardGame} from "../types/BoardGame.ts";
 
 function DashboardPage() {
+
+    const navigate = useNavigate();
 
     const { user } = useContext(AuthContext)!;
 
@@ -19,6 +24,7 @@ function DashboardPage() {
     const [ selectedSession, setSelectedSession ] = useState<GameSession | null>(null)
     const [ sessionsToDelete, setSessionsToDelete ] = useState<GameSession[]>([]);
     const [ sessionsInfo, setSessionsInfo] = useState<InfoText>({message:""})
+    const [ boardGames, setBoardGames ] = useState<BoardGame[]>([]);
 
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const sessionsToDeleteRef = useRef<GameSession[]>([]);
@@ -38,13 +44,24 @@ function DashboardPage() {
         }
     }
 
+    const getBoardGames = async () => {
+        const games = await fetch(`/api/user/${user?.id}/games/`, {
+           method: "GET",
+           credentials: 'include'
+        });
+
+        if (games.ok) {
+            const data = await games.json();
+            setBoardGames(data);
+        }
+    }
+
     useEffect(() => {
         if (user) {
             void getGameSession();
+            void getBoardGames();
         }
     }, [user]);
-
-
 
     const handleSessionsToDelete = (session: GameSession) => {
         sessionsToDeleteRef.current = [...sessionsToDeleteRef.current, session];
@@ -97,7 +114,11 @@ function DashboardPage() {
     };
 
     const handleEditSession = (session: GameSession) => {
+        navigate(ROUTES.editSessions.to(user!.id))
+    }
 
+    const handleAddSession = () => {
+        navigate(ROUTES.editSessions.to(user!.id))
     }
 
     return (
@@ -119,9 +140,19 @@ function DashboardPage() {
                     sessionsToDelete={sessionsToDelete}
                     onDelete={handleSessionsToDelete}
                     onOpenDetails={handleOpenDetails}
-                    waitForLoading={true} />
-                {sessionsToDelete.length > 0 && <div className="d-flex justify-content-center"><div className="alert alert-warning m-0 py-0" role="alert">You're about to delete {sessionsToDelete.length} session{sessionsToDelete.length > 1 && "s"}. <button className="btn btn-link alert-link" onClick={handleCancelDelete}>Undo</button></div></div>}
+                    onEditSession={handleEditSession}
+                    waitForLoading={true}
+                />
+                {sessionsToDelete.length > 0 &&
+                    <div className="d-flex justify-content-center">
+                        <div className="alert alert-warning m-0 py-0" role="alert">You're about to delete {sessionsToDelete.length} session{sessionsToDelete.length > 1 && "s"}.
+                            <button className="btn btn-link alert-link" onClick={handleCancelDelete}>Undo</button>
+                        </div>
+                    </div>}
                 {sessionsInfo.message && <InformationText infoText={sessionsInfo} />}
+                <div className="d-flex justify-content-center">
+                    <Button label={<><i className="bi bi-plus-lg" /> Add Session</>} variant="success" onClick={handleAddSession}/>
+                </div>
             </FormCard>
         </PageContainer>
 

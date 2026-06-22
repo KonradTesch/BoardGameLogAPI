@@ -8,7 +8,7 @@ from app.repositories.db_manager import GameDataManager, UserDataManager
 from .index_router import check_user
 from app.custom_exceptions import NotFoundException
 from .user_router import user_dependency, formatted_date
-from app.schemas.sessions import GameSession
+from app.schemas.sessions import GameSessionResponse
 
 router = APIRouter(
     prefix="/user/{user_id}/sessions",
@@ -22,7 +22,7 @@ game_manager = GameDataManager()
 user_manager = UserDataManager()
 
 
-@router.get("/", response_model=list[GameSession], response_model_by_alias=True)
+@router.get("/", response_model=list[GameSessionResponse], response_model_by_alias=True)
 def get_all_sessions_of_user(user_id: int, current_user: user_dependency):
     check_user(user_id, current_user)
 
@@ -48,7 +48,7 @@ def session_details(user_id: int, session_id: int, request: Request, current_use
 
 
 @router.post("/")
-def create_session(user_id: int, session: GameSession,current_user: user_dependency):
+def create_session(user_id: int, session: GameSessionResponse, current_user: user_dependency):
     check_user(user_id, current_user)
 
     try:
@@ -56,7 +56,7 @@ def create_session(user_id: int, session: GameSession,current_user: user_depende
         date_value = date(int(date_splits[0]), int(date_splits[1]), int(date_splits[2]))
 
         game_manager.create_session(
-            game_id= int(session.boardgame_id),
+            game_id= int(session.board_game_id),
             user_id = user_id,
             date_value = date_value,
             players=session.players,

@@ -9,8 +9,8 @@ from app.service.stats_calculator import get_player_stats
 from .user_router import user_dependency
 
 router = APIRouter(
-    prefix="/user/{user_id}/player",
-    tags=["player"]
+    prefix="/user/{user_id}/players",
+    tags=["players"]
 )
 
 templates = Jinja2Templates(directory="templates")

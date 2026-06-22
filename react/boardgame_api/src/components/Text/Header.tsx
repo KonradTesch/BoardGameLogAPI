@@ -1,8 +1,9 @@
 import { useState, useEffect, useContext} from "react";
 import {AuthContext} from "../../context/AuthContext.tsx";
-import NavDropdown from "../NavDropdown.tsx";
+import NavDropdown from "../Dropdowns/NavDropdown.tsx";
 import Button from "../Button/Button.tsx";
 import {useNavigate} from "react-router-dom";
+import {ROUTES} from "../../types/routes.ts";
 
 function Header() {
     const navigate = useNavigate();
@@ -27,7 +28,7 @@ function Header() {
 
         if (response.ok) {
             setUser(null)
-            navigate("/login")
+            navigate(ROUTES.login.to)
         }
     }
 

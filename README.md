@@ -45,11 +45,6 @@ ALGORITHM=HS256
 alembic upgrade head
 ```
 
-5. (Optional) Add default board games:
-```bash
-python repositories/db_add_boardgames.py
-```
-
 ## Usage
 
 1. Start the application:

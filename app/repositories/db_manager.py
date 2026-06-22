@@ -1,5 +1,5 @@
 from datetime import date
-from app.models import User, Base, Player, Boardgame, Game_Session, Session_Player
+from app.models import User, Base, Player, BoardGame, GameSession, Session_Player
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from passlib.context import CryptContext
@@ -8,6 +8,7 @@ import os
 from app.custom_exceptions import NotFoundException, UnauthorizedException, UnprocessableException
 
 def setup_database():
+    Base.metadata.drop_all(bind=engine)
     Base.metadata.create_all(bind=engine)
 
 load_dotenv()
@@ -132,7 +133,7 @@ class PlayerDataManager:
         player_scores = (session.query(Session_Player)
                          .join(Session_Player.session)
                          .filter(Session_Player.player_id == player_id)
-                         .filter(Game_Session.game_id == game_id)
+                         .filter(GameSession.game_id == game_id)
                          .all()
                          )
 
@@ -146,10 +147,10 @@ class PlayerDataManager:
 
         return player_scores
 
-    def get_player_games(self, player_id: int) -> list[Boardgame]:
-        player_games = (session.query(Boardgame)
-                        .join(Game_Session, Boardgame.sessions)
-                        .join(Session_Player, Game_Session.session_players)
+    def get_player_games(self, player_id: int) -> list[BoardGame]:
+        player_games = (session.query(BoardGame)
+                        .join(GameSession, BoardGame.sessions)
+                        .join(Session_Player, GameSession.session_players)
                         .filter(Session_Player.player_id == player_id)
                         .distinct()
                         .all()
@@ -160,23 +161,8 @@ class PlayerDataManager:
 
 class GameDataManager:
 
-    def create_game(self, game_title: str,min_players: int, max_players:int ):
-        new_game = Boardgame(title=game_title, min_players=min_players, max_players=max_players)
-        if session.query(Boardgame).filter(Boardgame.title == game_title).count() > 0:
-            print(f"Boardgame '{game_title}' already exists")
-            return
-
-        session.add(new_game)
-        session.commit()
-
-    def get_all_games(self, sort: bool) -> list[Boardgame]:
-        games = session.query(Boardgame).all()
-        if sort:
-            games = sorted(games, key=lambda game: game.title)
-        return games
-
     def create_session(self, game_id: int, user_id: int, date_value: date, players: list):
-        new_session = Game_Session(game_id=game_id, user_id=user_id, date=date_value)
+        new_session = GameSession(game_id=game_id, user_id=user_id, date=date_value)
         session.add(new_session)
         session.commit()
         session.refresh(new_session)
@@ -196,8 +182,8 @@ class GameDataManager:
             session.add(new_session_player)
             session.commit()
 
-    def validate_session(self, session_id: int) -> Game_Session:
-        game_session = session.query(Game_Session).filter(Game_Session.id == session_id).first()
+    def validate_session(self, session_id: int) -> GameSession:
+        game_session = session.query(GameSession).filter(GameSession.id == session_id).first()
 
         if not game_session:
             raise NotFoundException("Game Session not found")
@@ -246,33 +232,23 @@ class GameDataManager:
         session.delete(session_to_delete)
         session.commit()
 
-    def get_session_by_id(self, session_id: int) -> Game_Session | None:
-        game_session = session.query(Game_Session).filter(Game_Session.id == session_id).first()
+    def get_session_by_id(self, session_id: int) -> GameSession | None:
+        game_session = session.query(GameSession).filter(GameSession.id == session_id).first()
         return game_session
 
-    def get_user_game_session_by_game(self, user_id, game_id) -> list[Game_Session]:
-        game_sessions = (session.query(Game_Session)
-                      .filter(Game_Session.game_id == game_id)
-                      .filter(Game_Session.user_id == user_id)
+    def get_user_game_session_by_game(self, user_id, game_id) -> list[GameSession]:
+        game_sessions = (session.query(GameSession)
+                      .filter(GameSession.game_id == game_id)
+                      .filter(GameSession.user_id == user_id)
                       .all()
                          )
 
         return game_sessions
 
-    def get_user_game_sessions_all(self, user_id) -> list[Game_Session]:
-        game_sessions = (session.query(Game_Session)
-                         .filter(Game_Session.user_id == user_id)
+    def get_user_game_sessions_all(self, user_id) -> list[GameSession]:
+        game_sessions = (session.query(GameSession)
+                         .filter(GameSession.user_id == user_id)
                          .all()
                          )
 
         return game_sessions
-
-    def get_user_games(self, user_id) -> list[Boardgame]:
-        user_games = (session.query(Boardgame)
-                        .join(Boardgame.sessions)
-                        .filter(Game_Session.user_id == user_id)
-                        .distinct()
-                        .all()
-                        )
-
-        return user_games

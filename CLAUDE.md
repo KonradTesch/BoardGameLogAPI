@@ -27,10 +27,6 @@ alembic upgrade head        # apply all migrations
 alembic revision --autogenerate -m "description"  # create new migration
 ```
 
-Populate default boardgames:
-```bash
-python app/repositories/db_add_boardgames.py
-```
 
 ### Frontend (React)
 
