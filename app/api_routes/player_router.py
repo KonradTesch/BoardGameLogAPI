@@ -1,16 +1,15 @@
 from fastapi import APIRouter, HTTPException, status, Request, Depends
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse
-from starlette.status import HTTP_400_BAD_REQUEST, HTTP_201_CREATED, HTTP_200_OK
+from starlette.status import HTTP_400_BAD_REQUEST, HTTP_201_CREATED, HTTP_200_OK, HTTP_422_UNPROCESSABLE_CONTENT
 from sqlalchemy.orm import Session
 from typing import Annotated
 from app.database import get_db
 from app.repositories.player_repository import PlayerRepository
-from app.repositories.user_repository import UserRepository
 from .index_router import check_user
 from app.custom_exceptions import NotFoundException, UnprocessableException
-from app.service.stats_calculator import get_player_stats
 from .user_router import user_dependency
+from app.schemas.player import PlayerResponse
 
 router = APIRouter(
     prefix="/user/{user_id}/players",
@@ -24,31 +23,32 @@ def get_player_repo(db: Session = Depends(get_db)):
 
 player_repo_dependency = Annotated[PlayerRepository, Depends(get_player_repo)]
 
-def get_user_repo(db: Session = Depends(get_db)):
-    return UserRepository(db)
+@router.get("/", response_model=list[PlayerResponse], response_model_by_alias=True)
+def get_players(user_id: int, current_user: user_dependency, player_repo: player_repo_dependency):
+    check_user(user_id, current_user)
 
-user_repo_dependency = Annotated[UserRepository, Depends(get_user_repo)]
+    players = player_repo.get_user_players(user_id)
+
+    return players
+
 
 
 @router.post("/")
-def create_player(user_id: int,player_name: str, current_user: user_dependency, player_repo: player_repo_dependency, user_repo: user_repo_dependency):
-    check_user(user_id, current_user)
+def create_player(user_id: int,player_name: str, current_user: user_dependency, player_repo: player_repo_dependency):
+    try:
+        check_user(user_id, current_user)
 
-    user = user_repo.get_user_by_id(user_id)
-    players = user.players
-    for player in players:
-        if player.name == player_name:
-            return JSONResponse(
-                status_code=HTTP_400_BAD_REQUEST,
-                content={"error": "Player exists already"}
-            )
-
-    player_repo.create_player(user, player_name)
-    return JSONResponse(
-        status_code=HTTP_201_CREATED,
-        content={
-            "message": "Player successfully added",
-        })
+        player_repo.create_player(user_id, player_name)
+        return JSONResponse(
+            status_code=HTTP_201_CREATED,
+            content={
+                "message": "Player successfully added",
+            })
+    except UnprocessableException as e:
+        return HTTPException(
+            status_code=HTTP_422_UNPROCESSABLE_CONTENT,
+            detail=str(e)
+        )
 
 
 @router.patch("/")
@@ -76,24 +76,5 @@ def delete_player(user_id: int, player_id, current_user: user_dependency, player
         check_user(user_id, current_user)
 
         player_repo.delete_player(player_id)
-    except NotFoundException as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-
-
-@router.get("/{player_id}/stats")
-def show_player_stats(user_id: int, player_id: int, request: Request, current_user: user_dependency, player_repo: player_repo_dependency, db: Session = Depends(get_db)):
-    check_user(user_id, current_user)
-    try:
-        player = player_repo.get_player_by_id(player_id)
-        player_stats = get_player_stats(db, player_id)
-
-        context= {
-            "request": request,
-            "user": current_user,
-            "player": player,
-            "player_stats": player_stats
-        }
-
-        return templates.TemplateResponse("player_stats.html", context)
     except NotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

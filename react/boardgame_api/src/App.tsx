@@ -3,17 +3,17 @@ import {AuthProvider} from "./context/AuthContext.tsx";
 import AppAuth from "./layout/AppAuth.tsx";
 import "./styles/App.css"
 import AppContent from "./layout/AppContent.tsx";
-import {UserDateProvider} from "./context/UserDataContext.tsx";
+import {UserDataProvider} from "./context/UserDataContext.tsx";
 
 function App() {
     return (
         <AuthProvider>
-            <UserDateProvider>
+            <UserDataProvider>
                 <BrowserRouter>
                     <AppAuth />
                     <AppContent />
                 </BrowserRouter>
-            </UserDateProvider>
+            </UserDataProvider>
         </AuthProvider>
     );
 }

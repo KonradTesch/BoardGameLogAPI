@@ -12,7 +12,6 @@ import ContentModal from "../components/Modals/ContentModal.tsx";
 import SessionDetails from "../components/SessionDetails.tsx";
 import {useNavigate} from "react-router-dom";
 import {ROUTES} from "../types/routes.ts";
-import type {BoardGame} from "../types/BoardGame.ts";
 
 function DashboardPage() {
 
@@ -24,7 +23,6 @@ function DashboardPage() {
     const [ selectedSession, setSelectedSession ] = useState<GameSession | null>(null)
     const [ sessionsToDelete, setSessionsToDelete ] = useState<GameSession[]>([]);
     const [ sessionsInfo, setSessionsInfo] = useState<InfoText>({message:""})
-    const [ boardGames, setBoardGames ] = useState<BoardGame[]>([]);
 
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const sessionsToDeleteRef = useRef<GameSession[]>([]);
@@ -44,22 +42,9 @@ function DashboardPage() {
         }
     }
 
-    const getBoardGames = async () => {
-        const games = await fetch(`/api/user/${user?.id}/games/`, {
-           method: "GET",
-           credentials: 'include'
-        });
-
-        if (games.ok) {
-            const data = await games.json();
-            setBoardGames(data);
-        }
-    }
-
     useEffect(() => {
         if (user) {
             void getGameSession();
-            void getBoardGames();
         }
     }, [user]);
 

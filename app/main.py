@@ -2,12 +2,12 @@ import uvicorn
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from api_routes.user_router import router as user_router
-from api_routes.session_router import router as session_router
-from api_routes.player_router import router as player_router
-from api_routes.board_game_router import router as board_game_router
-from api_routes.auth_router import router as auth_router
-from api_routes.index_router import router as index_router
+from app.api_routes.user_router import router as user_router
+from app.api_routes.session_router import router as session_router
+from app.api_routes.player_router import router as player_router
+from app.api_routes.board_game_router import router as board_game_router
+from app.api_routes.auth_router import router as auth_router
+from app.api_routes.index_router import router as index_router
 app = FastAPI()
 
 app.add_middleware(

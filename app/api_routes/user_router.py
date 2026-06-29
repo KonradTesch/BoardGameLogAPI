@@ -1,8 +1,6 @@
 from fastapi import APIRouter, Request, Depends, status, HTTPException, Cookie
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse, Response
-from pydantic import BaseModel, ConfigDict
-from pydantic.alias_generators import to_camel
 from typing import Annotated
 from datetime import datetime
 from sqlalchemy.orm import Session
@@ -14,7 +12,6 @@ from app.service.stats_calculator import get_game_stats
 from .index_router import check_user
 from app.custom_exceptions import UnauthorizedException, NotFoundException
 from app.schemas.user import PasswordChangeRequest, ChangeUsernameRequest
-from app.schemas.board_games import BoardGameResponse
 
 router = APIRouter(
     prefix="/user",
@@ -48,23 +45,6 @@ def formatted_date(date_string):
     else:
         date_obj = date_string
     return date_obj.strftime('%d.%m.%Y')
-
-templates.env.filters['formatted_date'] = formatted_date
-
-@router.get("/{user_id}")
-def user_home(user_id: int, request: Request, current_user: user_dependency, user_repo: user_repo_dependency, game_repo: game_session_repo_dependency):
-    check_user(user_id, current_user)
-
-    user = user_repo.get_user_by_id(user_id)
-    games = game_repo.get_all_games(sort = True)
-
-    context = {
-        "request": request,
-        "user": user,
-        "global_games": games,
-        "player_names": [{"id" : player.id, "name": player.name} for player in user.players]
-    }
-    return templates.TemplateResponse("user_home.html", context=context)
 
 
 @router.patch("/{user_id}/username")
@@ -104,7 +84,7 @@ def change_password(user_id: int, body: PasswordChangeRequest, current_user: use
 
 
 @router.delete("/{user_id}")
-def delete_account(user_id: int, response: Response, current_user: user_dependency, user_repo: user_repo_dependency):
+def delete_account(user_id: int, current_user: user_dependency, user_repo: user_repo_dependency):
     try:
         check_user(user_id, current_user)
 
@@ -122,15 +102,6 @@ def delete_account(user_id: int, response: Response, current_user: user_dependen
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
     except NotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-
-
-@router.get("/{user_id}/boardgames", response_model=list[BoardGameResponse], response_model_by_alias=True)
-def user_all_board_games(user_id: int, current_user: user_dependency, game_repo: game_session_repo_dependency):
-    check_user(user_id, currentUser)
-
-    games = game_repo.get_all_games(sort = True)
-
-    return games
 
 
 @router.get("/{user_id}/boardgames/stats")
