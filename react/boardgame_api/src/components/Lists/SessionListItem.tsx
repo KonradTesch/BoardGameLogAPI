@@ -1,8 +1,8 @@
-import type {GameSession} from "../types/GameSession.ts";
-import IconButton from "./Button/IconButton.tsx";
+import type {GameSession} from "../../types/GameSession.ts";
+import IconButton from "../Button/IconButton.tsx";
 
 interface SessionListItemProps {
-    index: number
+    index: number;
     session: GameSession;
     onDelete: () => void;
     onOpenDetails: () => void;

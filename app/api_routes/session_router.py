@@ -79,7 +79,7 @@ def create_session(user_id: int, session: GameSessionResponse, current_user: use
                 "message": "Session successfully created",
             })
     except NotFoundException as e:
-        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
 @router.patch("/{session_id}")
@@ -102,7 +102,7 @@ def update_session(user_id: int, session_id: int, session: dict, current_user: u
             content={"message": "Session successfully updated"}
         )
     except NotFoundException as e:
-        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
 @router.delete("/{session_id}")
@@ -112,4 +112,4 @@ def delete_session(user_id: int, session_id: int, current_user: user_dependency,
 
         game_repo.delete_session(session_id)
     except NotFoundException as e:
-        return HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

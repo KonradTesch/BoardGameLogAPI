@@ -13,13 +13,15 @@ class PlayerRepository:
 
         return players
 
-    def create_player(self, user_id, player_name:str):
+    def create_player(self, user_id, player_name:str) -> Player:
         if self.db.query(Player).filter(Player.name == player_name).first() is not None:
             raise UnprocessableException(f"Player {player_name} already exists.")
 
         new_player = Player(name=player_name, user_id=user_id)
         self.db.add(new_player)
         self.db.commit()
+
+        return new_player
 
     def validate_player(self, player_id:int) -> Player:
         player: Optional[Player] = self.db.query(Player).filter(Player.id == player_id).first()

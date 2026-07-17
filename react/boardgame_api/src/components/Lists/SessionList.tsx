@@ -1,7 +1,7 @@
 import type {GameSession} from "../../types/GameSession.ts";
 import {useContext} from "react";
 import {AuthContext} from "../../context/AuthContext.tsx";
-import SessionListItem from "../SessionListItem.tsx";
+import SessionListItem from "./SessionListItem.tsx";
 
 interface SessionListProps {
     sessions: GameSession[] | null;

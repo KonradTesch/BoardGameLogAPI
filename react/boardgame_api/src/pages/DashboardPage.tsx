@@ -12,17 +12,26 @@ import ContentModal from "../components/Modals/ContentModal.tsx";
 import SessionDetails from "../components/SessionDetails.tsx";
 import {useNavigate} from "react-router-dom";
 import {ROUTES} from "../types/routes.ts";
+import DashboardList from "../components/Lists/DashboardList.tsx";
+import type {Player} from "../types/Player.ts";
+import PlayerListItem from "../components/Lists/PlayerListItem.tsx";
+import {UserDataContext} from "../context/UserDataContext.tsx";
+import InputField from "../components/InputField.tsx";
 
 function DashboardPage() {
 
     const navigate = useNavigate();
 
     const { user } = useContext(AuthContext)!;
+    const { players, addPlayer, removePlayer } = useContext(UserDataContext)!;
 
     const [ sessions, setSessions] = useState<GameSession[] | null>(null)
     const [ selectedSession, setSelectedSession ] = useState<GameSession | null>(null)
     const [ sessionsToDelete, setSessionsToDelete ] = useState<GameSession[]>([]);
     const [ sessionsInfo, setSessionsInfo] = useState<InfoText>({message:""})
+    const [ isAddingPlayer, setIsAddingPlayer ] = useState<boolean>(false)
+    const [ addPlayerName, setAddPlayerName ] = useState<string>("")
+    const [ playerInfo, setPlayerInfo ] = useState<InfoText>({message:""})
 
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const sessionsToDeleteRef = useRef<GameSession[]>([]);
@@ -63,7 +72,7 @@ function DashboardPage() {
         }, 10000)
     };
 
-    const handleCancelDelete = () => {
+    const handleCancelDeleteSession = () => {
         if (timerRef.current) {
             clearTimeout(timerRef.current);
         }
@@ -106,6 +115,44 @@ function DashboardPage() {
         navigate(ROUTES.editSessions.to(user!.id))
     }
 
+    const handleDeletePlayer = async (player: Player) => {
+        const removePlayerResult = await removePlayer(player);
+
+        if (removePlayerResult.success) {
+            setPlayerInfo({message: removePlayerResult.message, variant: "success"});
+        }
+        else {
+            setPlayerInfo({message: removePlayerResult.error, variant: "danger"});
+        }
+    }
+
+    const handleOpenPlayerStats = (player: Player) => {
+
+    }
+
+    const handleEditPlayer = (player: Player) => {
+
+    }
+
+    const handleAddPlayer = async () => {
+        const addPlayerResult = await addPlayer(addPlayerName)
+
+        if (addPlayerResult.success) {
+            setPlayerInfo({message: addPlayerResult.message, variant: "success"})
+        }
+        else{
+            setPlayerInfo({message: addPlayerResult.error, variant: "warning"})
+        }
+
+        setAddPlayerName("");
+        setIsAddingPlayer(false);
+    }
+
+    const handleCancelAddPlayer = () => {
+        setAddPlayerName("");
+        setIsAddingPlayer(false);
+    }
+
     return (
         <PageContainer>
             <ContentModal
@@ -119,7 +166,7 @@ function DashboardPage() {
                     }>
                 {selectedSession && <SessionDetails session={selectedSession}/>}
             </ContentModal>
-            <FormCard header={<><i className="bi bi-calendar-week-fill"></i> Game Sessions</>}>
+            <FormCard header={<><i className="bi bi-calendar-week-fill" /> Game Sessions</>}>
                 <SessionList
                     sessions={sessions}
                     sessionsToDelete={sessionsToDelete}
@@ -131,13 +178,61 @@ function DashboardPage() {
                 {sessionsToDelete.length > 0 &&
                     <div className="d-flex justify-content-center">
                         <div className="alert alert-warning m-0 py-0" role="alert">You're about to delete {sessionsToDelete.length} session{sessionsToDelete.length > 1 && "s"}.
-                            <button className="btn btn-link alert-link" onClick={handleCancelDelete}>Undo</button>
+                            <button className="btn btn-link alert-link" onClick={handleCancelDeleteSession}>Undo</button>
                         </div>
                     </div>}
                 {sessionsInfo.message && <InformationText infoText={sessionsInfo} />}
                 <div className="d-flex justify-content-center">
                     <Button label={<><i className="bi bi-plus-lg" /> Add Session</>} variant="success" onClick={handleAddSession}/>
                 </div>
+            </FormCard>
+            <FormCard header={<><i className="bi bi-person-fill" /> Players</>}>
+                <DashboardList waitForLoading={true}>
+                    {players?.map((player: Player, index: number) =>(
+                    <PlayerListItem
+                        index={index}
+                        player={player}
+                        onDelete={() => handleDeletePlayer(player)}
+                        onOpenStats={() => handleOpenPlayerStats(player)}
+                        onEdit={() => handleEditPlayer(player)}
+                    />))}
+                    { isAddingPlayer &&
+                    <li className="list-group-item d-flex justify-content-between align-items-center p-1" key="-1">
+                        <span>
+                            <InputField
+                                label="Name"
+                                type="text"
+                                value={addPlayerName}
+                                onChange={(e) => setAddPlayerName(e.target.value)}/>
+                        </span>
+                        <div className="d-flex">
+                            <Button
+                                label="Cancel"
+                                variant="warning"
+                                onClick={handleCancelAddPlayer}
+                            />
+                            <Button
+                                label="Add"
+                                variant="success"
+                                onClick={handleAddPlayer}
+                                disabled={!addPlayerName}
+                            />
+
+                        </div>
+                    </li>
+                    }
+                </DashboardList>
+                {playerInfo.message && <InformationText infoText={playerInfo} />}
+                { !isAddingPlayer &&
+                <div className="d-flex justify-content-center">
+                    <Button
+                        label={<><i className="bi bi-plus-lg" /> Add Player</>}
+                        variant="success"
+                        onClick={() => setIsAddingPlayer(true)}
+                        disabled={isAddingPlayer}
+                    />
+                </div>
+                }
             </FormCard>
         </PageContainer>
 

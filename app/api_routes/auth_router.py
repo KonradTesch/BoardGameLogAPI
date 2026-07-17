@@ -1,8 +1,7 @@
 from typing import Any, Annotated
-from fastapi import APIRouter, Depends, Response, HTTPException, Cookie
+from fastapi import APIRouter, Depends, Response, HTTPException, Cookie, status
 from fastapi.security import OAuth2PasswordRequestForm
 from pydantic import BaseModel
-from starlette import status
 from sqlalchemy.orm import Session
 from app.custom_exceptions import UnprocessableException, NotFoundException, UnauthorizedException
 from app.database import get_db

@@ -9,7 +9,7 @@ from app.repositories.player_repository import PlayerRepository
 from .index_router import check_user
 from app.custom_exceptions import NotFoundException, UnprocessableException
 from .user_router import user_dependency
-from app.schemas.player import PlayerResponse
+from app.schemas.player import PlayerResponse, PlayerCreate, PlayerRemove
 
 router = APIRouter(
     prefix="/user/{user_id}/players",
@@ -33,19 +33,16 @@ def get_players(user_id: int, current_user: user_dependency, player_repo: player
 
 
 
-@router.post("/")
-def create_player(user_id: int,player_name: str, current_user: user_dependency, player_repo: player_repo_dependency):
+@router.post("/", response_model=PlayerResponse, response_model_by_alias=True, status_code=status.HTTP_201_CREATED)
+def create_player(user_id: int,new_player: PlayerCreate, current_user: user_dependency, player_repo: player_repo_dependency):
     try:
         check_user(user_id, current_user)
 
-        player_repo.create_player(user_id, player_name)
-        return JSONResponse(
-            status_code=HTTP_201_CREATED,
-            content={
-                "message": "Player successfully added",
-            })
+        player = player_repo.create_player(user_id, new_player.name)
+        return player
+
     except UnprocessableException as e:
-        return HTTPException(
+        raise HTTPException(
             status_code=HTTP_422_UNPROCESSABLE_CONTENT,
             detail=str(e)
         )
@@ -71,10 +68,10 @@ def update_player(user_id: int, player_data: dict, current_user: user_dependency
 
 
 @router.delete("/")
-def delete_player(user_id: int, player_id, current_user: user_dependency, player_repo: player_repo_dependency):
+def delete_player(user_id: int, player: PlayerRemove, current_user: user_dependency, player_repo: player_repo_dependency):
     try:
         check_user(user_id, current_user)
 
-        player_repo.delete_player(player_id)
+        player_repo.delete_player(player.id)
     except NotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
