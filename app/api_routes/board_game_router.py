@@ -7,7 +7,7 @@ from .user_router import user_dependency
 from app.database import get_db
 from app.repositories.board_game_repository import BoardGameRepository
 from typing import Annotated
-from app.schemas.board_games import BoardGameResponse
+from app.schemas.board_games import BoardGameResponse, AddBoardGameRequest, RemoveBoardGameRequest
 
 router = APIRouter(
     prefix="/user/{user_id}/board-games",
@@ -19,18 +19,14 @@ def get_board_game_repo(db: Session = Depends(get_db)):  # get_db bekannt durch 
 
 board_game_repo_dependency = Annotated[BoardGameRepository, Depends(get_board_game_repo)]
 
-@router.post("/")
-def create_board_game(user_id: int, current_user:user_dependency, game_title:str, min_players:int, max_players: int, repo: board_game_repo_dependency):
+@router.post("/", response_model=BoardGameResponse, status_code=status.HTTP_201_CREATED)
+def create_board_game(user_id: int, current_user:user_dependency, board_game: AddBoardGameRequest, repo: board_game_repo_dependency):
     try:
         check_user(user_id, current_user)
 
-        repo.create_board_game(game_title, min_players, max_players, user_id)
+        new_board_game = repo.create_board_game(board_game.title, user_id)
 
-        return JSONResponse(
-            status_code=status.HTTP_201_CREATED,
-            content={
-                "message": "Boardgame successfully created",
-            })
+        return new_board_game
 
     except UnprocessableException as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(e))
@@ -44,11 +40,11 @@ def get_board_games(user_id: int, current_user: user_dependency, repo: board_gam
     return board_games
 
 @router.delete("/{board_game_id}")
-def delete_board_game(user_id: int, current_user:user_dependency, repo: board_game_repo_dependency, board_game_id: int):
+def delete_board_game(user_id: int, current_user:user_dependency, repo: board_game_repo_dependency, board_game: RemoveBoardGameRequest):
     try:
         check_user(user_id, current_user)
 
-        repo.delete_board_game(board_game_id, user_id)
+        repo.delete_board_game(board_game.id, user_id)
 
     except NotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

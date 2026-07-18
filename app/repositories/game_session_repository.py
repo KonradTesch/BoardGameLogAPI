@@ -1,6 +1,7 @@
 from datetime import date
+from sqlalchemy import select, Sequence
 from sqlalchemy.orm import Session
-from app.models import Player, GameSession, Session_Player
+from app.models import Player, GameSession, SessionPlayer
 from app.custom_exceptions import NotFoundException
 
 
@@ -16,10 +17,11 @@ class GameSessionRepository:
 
         for player in players:
             player_id = player["id"]
-            if self.db.query(Player).filter(Player.id == player_id).count() == 0:
+            player_exists = self.db.scalars(select(Player).where(Player.id == player_id)).first()
+            if player_exists is None:
                 raise NotFoundException("Player not found")
 
-            new_session_player = Session_Player(
+            new_session_player = SessionPlayer(
                 session_id = new_session.id,
                 player_id = player_id,
                 score = player["score"],
@@ -30,7 +32,7 @@ class GameSessionRepository:
             self.db.commit()
 
     def validate_session(self, session_id: int) -> GameSession:
-        game_session = self.db.query(GameSession).filter(GameSession.id == session_id).first()
+        game_session = self.db.scalars(select(GameSession).where(GameSession.id == session_id)).first()
 
         if not game_session:
             raise NotFoundException("Game Session not found")
@@ -44,16 +46,22 @@ class GameSessionRepository:
         game_session.game_id = game_id
         game_session.date = date_value
 
-        session_players_before = self.db.query(Session_Player).filter(Session_Player.session_id == session_id).all()
+        session_players_before = list(self.db.scalars(
+            select(SessionPlayer).where(SessionPlayer.session_id == session_id)
+        ).all())
 
         for player in players:
             player_id = player["player_id"]
 
             #current players
-            session_player = self.db.query(Session_Player).filter(Session_Player.session_id == game_session.id).filter(Session_Player.player_id == player_id).first()
+            session_player = self.db.scalars(
+                select(SessionPlayer)
+                .where(SessionPlayer.session_id == game_session.id)
+                .where(SessionPlayer.player_id == player_id)
+            ).first()
 
             if not session_player:
-                new_session_player = Session_Player(
+                new_session_player = SessionPlayer(
                     session_id = game_session.id,
                     player_id = player_id,
                     score = player["score"],
@@ -80,22 +88,22 @@ class GameSessionRepository:
         self.db.commit()
 
     def get_session_by_id(self, session_id: int) -> GameSession | None:
-        game_session = self.db.query(GameSession).filter(GameSession.id == session_id).first()
+        game_session = self.db.scalars(select(GameSession).where(GameSession.id == session_id)).first()
         return game_session
 
-    def get_user_game_session_by_game(self, user_id, game_id) -> list[GameSession]:
-        game_sessions = (self.db.query(GameSession)
-                      .filter(GameSession.game_id == game_id)
-                      .filter(GameSession.user_id == user_id)
-                      .all()
-                         )
+    def get_user_game_session_by_game(self, user_id, game_id) -> Sequence[GameSession]:
+        game_sessions = self.db.scalars(
+            select(GameSession)
+            .where(GameSession.game_id == game_id)
+            .where(GameSession.user_id == user_id)
+        ).all()
 
         return game_sessions
 
-    def get_user_game_sessions_all(self, user_id) -> list[GameSession]:
-        game_sessions = (self.db.query(GameSession)
-                         .filter(GameSession.user_id == user_id)
-                         .all()
-                         )
+    def get_user_game_sessions_all(self, user_id) -> Sequence[GameSession]:
+        game_sessions = self.db.scalars(
+            select(GameSession)
+            .where(GameSession.user_id == user_id)
+        ).all()
 
         return game_sessions

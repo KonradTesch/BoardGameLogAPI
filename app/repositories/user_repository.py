@@ -1,3 +1,4 @@
+from sqlalchemy import select, Sequence
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
 from app.models import User
@@ -11,7 +12,7 @@ class UserRepository:
         self.db = db
 
     def create_user(self, username: str, password: str) -> User:
-        user = self.db.query(User).filter(User.username == username).first()
+        user = self.db.scalars(select(User).where(User.username == username)).first()
         if user:
             raise UnprocessableException(f"Username '{username}' already exists")
 
@@ -24,7 +25,7 @@ class UserRepository:
         return new_user
 
     def authenticate_user(self, username: str, password: str) -> User:
-        user = self.db.query(User).filter(User.username == username).first()
+        user = self.db.scalars(select(User).where(User.username == username)).first()
 
         if not user:
             raise NotFoundException(f"Username '{username}' not found")
@@ -34,7 +35,7 @@ class UserRepository:
         return user
 
     def update_username(self, user_id: int, new_username: str):
-        user = self.db.query(User).filter(User.id == user_id).first()
+        user = self.db.scalars(select(User).where(User.id == user_id)).first()
         user.username = new_username
         self.db.commit()
 
@@ -55,15 +56,15 @@ class UserRepository:
         self.db.commit()
 
     def validate_user(self, user_id:int) -> User:
-        user = self.db.query(User).filter(User.id == user_id).first()
+        user = self.db.scalars(select(User).where(User.id == user_id)).first()
 
         if not user:
             raise NotFoundException("User not found")
 
         return user
 
-    def get_all_users(self) -> list[User]:
-        return self.db.query(User).all()
+    def get_all_users(self) -> Sequence[User]:
+        return self.db.scalars(select(User)).all()
 
     def get_user_by_id(self, user_id: int) -> User:
         user = self.validate_user(user_id)

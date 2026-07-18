@@ -14,7 +14,7 @@ load_dotenv()
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from app.models import User, Player, BoardGame, GameSession, Session_Player
+from app.models import User, Player, BoardGame, GameSession, SessionPlayer
 
 SQLALCHEMY_DATABASE_URL = os.getenv("DATABASE_URL")
 engine = create_engine(SQLALCHEMY_DATABASE_URL)
@@ -46,18 +46,18 @@ for name in player_names:
 
 # Boardgames
 game_defs = [
-    ("Catan", 3, 4),
-    ("Ticket to Ride", 2, 5),
-    ("Pandemic", 2, 4),
+    "Catan",
+    "Ticket to Ride",
+    "Pandemic",
 ]
 games = []
-for title, min_p, max_p in game_defs:
+for title in game_defs:
     existing = db.query(BoardGame).filter(BoardGame.title == title, BoardGame.user_id == user.id).first()
     if existing:
         print(f"Boardgame '{title}' already exists, skipping.")
         games.append(existing)
     else:
-        g = BoardGame(title=title, min_players=min_p, max_players=max_p, user_id=user.id)
+        g = BoardGame(title=title, user_id=user.id)
         db.add(g)
         db.commit()
         db.refresh(g)
@@ -120,7 +120,7 @@ for s_data in sessions_data:
     db.refresh(gs)
 
     for p_data in s_data["players"]:
-        sp = Session_Player(
+        sp = SessionPlayer(
             session_id=gs.id,
             player_id=p_data["player"].id,
             score=p_data["score"],

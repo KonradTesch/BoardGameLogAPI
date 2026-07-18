@@ -1,21 +1,30 @@
+from sqlalchemy import select, Sequence
 from sqlalchemy.orm import Session
-from app.models import User, Player, BoardGame, GameSession, Session_Player
+from app.models import User, Player, BoardGame, GameSession, SessionPlayer
 from app.custom_exceptions import NotFoundException, UnprocessableException
-from typing import Optional, cast
+from typing import Optional
 
 
 class PlayerRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_user_players(self, user_id: int) -> list[Player]:
-        players = cast(list[Player], self.db.query(Player).filter(Player.user_id == user_id).all())
+    def get_user_players(self, user_id: int) -> Sequence[Player]:
+        players = self.db.scalars(
+            select(Player).where(Player.user_id == user_id)
+        ).all()
 
         return players
 
-    def create_player(self, user_id, player_name:str) -> Player:
-        if self.db.query(Player).filter(Player.name == player_name).first() is not None:
-            raise UnprocessableException(f"Player {player_name} already exists.")
+    def create_player(self, user_id: int, player_name: str) -> Player:
+        user = self.db.scalars(select(User).where(User.id == user_id)).first()
+
+        if not user:
+            raise NotFoundException("User not found")
+
+        for player in user.players:
+            if player.name == player_name:
+                raise UnprocessableException(f"Player name '{player.name}' already exists")
 
         new_player = Player(name=player_name, user_id=user_id)
         self.db.add(new_player)
@@ -23,8 +32,8 @@ class PlayerRepository:
 
         return new_player
 
-    def validate_player(self, player_id:int) -> Player:
-        player: Optional[Player] = self.db.query(Player).filter(Player.id == player_id).first()
+    def validate_player(self, player_id: int) -> Player:
+        player: Optional[Player] = self.db.scalars(select(Player).where(Player.id == player_id)).first()
 
         if not player:
             raise NotFoundException("Player not found.")
@@ -32,7 +41,7 @@ class PlayerRepository:
         return player
 
     def update_player(self, user_id: int, player_id: int, new_name: str):
-        user = self.db.query(User).filter(User.id == user_id).first()
+        user = self.db.scalars(select(User).where(User.id == user_id)).first()
 
         if not user:
             raise NotFoundException("User not found")
@@ -46,39 +55,42 @@ class PlayerRepository:
         player.name = new_name
         self.db.commit()
 
-    def delete_player(self, player_id: int) -> bool:
-        player_to_delete = self.db.query(Player).filter(Player.id == player_id)
-        if player_to_delete:
-            player_to_delete.delete()
-            self.db.commit()
-            return True
-        return False
+    def delete_player(self, player_id: int):
+        player_to_delete = self.validate_player(player_id)
 
-    def get_player_scores_for_game(self, player_id: int, game_id: int) -> list[Session_Player]:
-        player_scores = cast(list[Session_Player] ,(self.db.query(Session_Player)
-                         .join(Session_Player.session)
-                         .filter(Session_Player.player_id == player_id)
-                         .filter(GameSession.game_id == game_id)
-                         .all()
-                         ))
+        session_players = player_to_delete.session_players
 
-        return player_scores
+        for session_player in session_players:
+            session_player.session.deleted_players = True
 
-    def get_player_scores_all(self, player_id: int) -> list[Session_Player]:
-        player_scores = cast(list[Session_Player] ,(self.db.query(Session_Player)
-                         .filter(Session_Player.player_id == player_id)
-                         .all()
-                         ))
+        self.db.delete(player_to_delete)
+        self.db.commit()
+
+    def get_player_scores_for_game(self, player_id: int, game_id: int) -> Sequence[SessionPlayer]:
+        player_scores = self.db.scalars(
+            select(SessionPlayer)
+            .join(SessionPlayer.session)
+            .where(SessionPlayer.player_id == player_id)
+            .where(GameSession.game_id == game_id)
+        ).all()
 
         return player_scores
 
-    def get_player_games(self, player_id: int) -> list[BoardGame]:
-        player_games = cast(list[BoardGame] ,(self.db.query(BoardGame)
-                        .join(GameSession, BoardGame.sessions)
-                        .join(Session_Player, GameSession.session_players)
-                        .filter(Session_Player.player_id == player_id)
-                        .distinct()
-                        .all()
-                        ))
+    def get_player_scores_all(self, player_id: int) -> Sequence[SessionPlayer]:
+        player_scores = self.db.scalars(
+            select(SessionPlayer)
+            .where(SessionPlayer.player_id == player_id)
+        ).all()
+
+        return player_scores
+
+    def get_player_games(self, player_id: int) -> Sequence[BoardGame]:
+        player_games = self.db.scalars(
+            select(BoardGame)
+            .join(GameSession, BoardGame.sessions)
+            .join(SessionPlayer, GameSession.session_players)
+            .where(SessionPlayer.player_id == player_id)
+            .distinct()
+        ).all()
 
         return player_games

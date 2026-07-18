@@ -91,8 +91,13 @@ export function UserDataProvider({ children }: { children: ReactNode}) {
     };
 
     const addBoardGame = (newBoardGame: BoardGame) => {
+        const addBoardGameRequest = fetch(`/api/user/${user?.id}/board-games/`, {
+            method: "POST",
+            credentials: "include",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({"boardGame": newBoardGame})
+        })
         setBoardGames(prev => [...prev, newBoardGame]);
-        void refreshBoardGames();
     };
 
     const removeBoardGame = (delBoardGame: BoardGame) => {
