@@ -39,7 +39,7 @@ def get_board_games(user_id: int, current_user: user_dependency, repo: board_gam
 
     return board_games
 
-@router.delete("/{board_game_id}")
+@router.delete("/")
 def delete_board_game(user_id: int, current_user:user_dependency, repo: board_game_repo_dependency, board_game: RemoveBoardGameRequest):
     try:
         check_user(user_id, current_user)

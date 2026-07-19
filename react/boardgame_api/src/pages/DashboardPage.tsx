@@ -17,21 +17,28 @@ import type {Player} from "../types/Player.ts";
 import PlayerListItem from "../components/Lists/PlayerListItem.tsx";
 import {UserDataContext} from "../context/UserDataContext.tsx";
 import InputField from "../components/InputField.tsx";
+import type {BoardGame} from "../types/BoardGame.ts";
+import BoardGameListItem from "../components/Lists/BoardGameListItem.tsx";
 
 function DashboardPage() {
 
     const navigate = useNavigate();
 
     const { user } = useContext(AuthContext)!;
-    const { players, addPlayer, removePlayer } = useContext(UserDataContext)!;
+    const { players, addPlayer, removePlayer, boardGames, addBoardGame, removeBoardGame } = useContext(UserDataContext)!;
 
     const [ sessions, setSessions] = useState<GameSession[] | null>(null)
     const [ selectedSession, setSelectedSession ] = useState<GameSession | null>(null)
     const [ sessionsToDelete, setSessionsToDelete ] = useState<GameSession[]>([]);
     const [ sessionsInfo, setSessionsInfo] = useState<InfoText>({message:""})
+
     const [ isAddingPlayer, setIsAddingPlayer ] = useState<boolean>(false)
     const [ addPlayerName, setAddPlayerName ] = useState<string>("")
     const [ playerInfo, setPlayerInfo ] = useState<InfoText>({message:""})
+
+    const [ isAddingBoardGame, setIsAddingBoardGame ] = useState<boolean>(false)
+    const [ addBoardGameName, setAddBoardGameName ] = useState<string>("")
+    const [ boardGameInfo, setBoardGameInfo ] = useState<InfoText>({message:""})
 
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const sessionsToDeleteRef = useRef<GameSession[]>([]);
@@ -153,6 +160,43 @@ function DashboardPage() {
         setIsAddingPlayer(false);
     }
 
+    const handleAddBoardGame = async () => {
+        const AddBoardGameResult = await addBoardGame(addBoardGameName);
+
+        setAddBoardGameName("");
+
+        if (AddBoardGameResult.success) {
+            setBoardGameInfo({message: AddBoardGameResult.message, variant: "success"});
+        }
+        else {
+            setBoardGameInfo({message: AddBoardGameResult.error, variant:"warning"})
+        }
+    }
+
+    const handleDeleteBoardGame = async (boardGame: BoardGame) => {
+        const removeBoardGameResult = await removeBoardGame(boardGame);
+
+        if (removeBoardGameResult.success) {
+            setBoardGameInfo({message: removeBoardGameResult.message, variant: "success"});
+        }
+        else {
+            setBoardGameInfo({message: removeBoardGameResult.error, variant: "warning"});
+        }
+    }
+
+    const handleEditBoardGame = (boardGame: BoardGame) => {
+
+    }
+
+    const handleOpenBoardGameStats = (boardGame: BoardGame) => {
+
+    }
+
+    const handleCancelAddBoardGame = () => {
+        setIsAddingBoardGame(false);
+        setAddBoardGameName("");
+    }
+
     return (
         <PageContainer>
             <ContentModal
@@ -197,7 +241,7 @@ function DashboardPage() {
                         onEdit={() => handleEditPlayer(player)}
                     />))}
                     { isAddingPlayer &&
-                    <li className="list-group-item d-flex justify-content-between align-items-center p-1" key="-1">
+                    <li className="list-group-item d-flex justify-content-between align-items-center" key="-1">
                         <span>
                             <InputField
                                 label="Name"
@@ -205,10 +249,10 @@ function DashboardPage() {
                                 value={addPlayerName}
                                 onChange={(e) => setAddPlayerName(e.target.value)}/>
                         </span>
-                        <div className="d-flex">
+                        <div className="d-flex gap-2">
                             <Button
                                 label="Cancel"
-                                variant="warning"
+                                variant="secondary"
                                 onClick={handleCancelAddPlayer}
                             />
                             <Button
@@ -230,6 +274,55 @@ function DashboardPage() {
                         variant="success"
                         onClick={() => setIsAddingPlayer(true)}
                         disabled={isAddingPlayer}
+                    />
+                </div>
+                }
+            </FormCard>
+
+            <FormCard header={<><i className="bi bi-dice-5-fill" /> Board Games</>}>
+                <DashboardList waitForLoading={true}>
+                    {boardGames?.map((boardGame: BoardGame, index: number) =>(
+                    <BoardGameListItem
+                        index={index}
+                        boardGame={boardGame}
+                        onDelete={() => handleDeleteBoardGame(boardGame)}
+                        onOpenStats={() => handleOpenBoardGameStats(boardGame)}
+                        onEdit={() => handleEditBoardGame(boardGame)}
+                    />))}
+                    { isAddingBoardGame &&
+                    <li className="list-group-item d-flex justify-content-between align-items-center p-1" key="-1">
+                        <span>
+                            <InputField
+                                label="Name"
+                                type="text"
+                                value={addBoardGameName}
+                                onChange={(e) => setAddBoardGameName(e.target.value)}/>
+                        </span>
+                        <div className="d-flex gap-2">
+                            <Button
+                                label="Cancel"
+                                variant="secondary"
+                                onClick={handleCancelAddBoardGame}
+                            />
+                            <Button
+                                label="Add"
+                                variant="success"
+                                onClick={handleAddBoardGame}
+                                disabled={!addBoardGameName}
+                            />
+
+                        </div>
+                    </li>
+                    }
+                </DashboardList>
+                {boardGameInfo.message && <InformationText infoText={boardGameInfo} />}
+                { !isAddingBoardGame &&
+                <div className="d-flex justify-content-center">
+                    <Button
+                        label={<><i className="bi bi-plus-lg" /> Add Board Game</>}
+                        variant="success"
+                        onClick={() => setIsAddingBoardGame(true)}
+                        disabled={isAddingBoardGame}
                     />
                 </div>
                 }

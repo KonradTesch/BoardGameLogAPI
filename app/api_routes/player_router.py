@@ -38,6 +38,9 @@ def create_player(user_id: int,new_player: PlayerCreate, current_user: user_depe
     try:
         check_user(user_id, current_user)
 
+        if new_player.name == "":
+            raise UnprocessableException(f"Player name is empty.")
+
         player = player_repo.create_player(user_id, new_player.name)
         return player
 

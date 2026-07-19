@@ -10,6 +10,9 @@ class BoardGameRepository:
         self.db = db
 
     def create_board_game(self, game_title: str, user_id:int ) -> BoardGame:
+        if game_title == "":
+            raise UnprocessableException(f"Board game title is empty.")
+
         existing_game = self.db.scalars(
             select(BoardGame)
             .where(BoardGame.title == game_title)

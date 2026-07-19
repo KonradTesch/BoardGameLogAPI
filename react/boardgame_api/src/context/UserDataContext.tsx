@@ -10,8 +10,8 @@ type RequestResult =
 
 interface UserDateContextType {
     boardGames: BoardGame[];
-    addBoardGame: (newBoardGame: BoardGame) => void;
-    removeBoardGame: (delBoardGame: BoardGame) => void;
+    addBoardGame: (newBoardGameTite: string) => Promise<RequestResult>;
+    removeBoardGame: (delBoardGame: BoardGame) => Promise<RequestResult>;
     players: Player[];
     addPlayer: (newPlayerName: string) => Promise<RequestResult>;
     removePlayer: (delPlayer: Player) => Promise<RequestResult>;
@@ -73,8 +73,8 @@ export function UserDataProvider({ children }: { children: ReactNode}) {
         return {success: false, error: getDetailStringOrDefault(data.detail, "Unknown error, try again later.")};
     }
 
-    const removePlayer = async  (delPlayer: Player) => {
-        const removePlayerResponse = await fetch(`/api/user/${user.id}/players/`, {
+    const removePlayer = async  (delPlayer: Player): Promise<RequestResult> => {
+        const removePlayerResponse = await fetch(`/api/user/${user?.id}/players/`, {
             method: "DELETE",
             credentials: "include",
             headers: {"Content-Type": "application/json"},
@@ -87,22 +87,44 @@ export function UserDataProvider({ children }: { children: ReactNode}) {
             return {success: true, message: "Player removed successfully."};
         }
 
-        return {success: false, error: getDetailStringOrDefault(data.detail, "Unknown error, try again.")};
+        return {success: false, error: getDetailStringOrDefault(data.detail, "Unknown error, try again later.")};
     };
 
-    const addBoardGame = (newBoardGame: BoardGame) => {
-        const addBoardGameRequest = fetch(`/api/user/${user?.id}/board-games/`, {
+    const addBoardGame = async (newBoardGameTitle: string): Promise<RequestResult> => {
+        const addBoardGameRequest = await fetch(`/api/user/${user?.id}/board-games/`, {
             method: "POST",
             credentials: "include",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({"boardGame": newBoardGame})
+            body: JSON.stringify({"title": newBoardGameTitle})
         })
-        setBoardGames(prev => [...prev, newBoardGame]);
+
+        const response = await addBoardGameRequest.json();
+        if (addBoardGameRequest.ok) {
+            setBoardGames(prev => [...prev, response as BoardGame]);
+            return {success: true, message: "Board game added successfully."};
+        }
+        else {
+           return {success: false, error: getDetailStringOrDefault(response.detail, "Unknown error, try again later.")};
+        }
+
     };
 
-    const removeBoardGame = (delBoardGame: BoardGame) => {
-        setBoardGames(prev => prev.filter((boardGame) => boardGame !== delBoardGame));
-        void refreshBoardGames()
+    const removeBoardGame = async (delBoardGame: BoardGame): Promise<RequestResult> => {
+        const removeBoardgameRequest = await fetch(`/api/user/${user?.id}/board-games/`, {
+            method: "DELETE",
+            credentials: "include",
+            headers: {"Content-Type": "application/json"},
+            body: JSON.stringify({"id": delBoardGame.id})
+        })
+
+        const response = await removeBoardgameRequest.json();
+        if (removeBoardgameRequest.ok) {
+            setBoardGames(prev => prev.filter((x: BoardGame) => x.id !== delBoardGame.id));
+            return {success: true, message: "Board game removed successfully."};
+        }
+        else {
+            return {success: false, error: getDetailStringOrDefault(response.detail, "Unknown error, try again later.")};
+        }
     }
 
     return (
