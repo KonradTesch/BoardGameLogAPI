@@ -41,6 +41,14 @@ class BoardGameRepository:
         return board_game
 
 
+    def update_board_game_title(self, user_id: int, board_game_id:int, new_title:str) -> None:
+        board_game = self.validate_board_game(board_game_id, user_id)
+
+        board_game.title = new_title
+
+        self.db.commit()
+
+
     def delete_board_game(self, board_game_id:int, user_id:int):
         board_game = self.validate_board_game(board_game_id, user_id)
 

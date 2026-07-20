@@ -7,7 +7,7 @@ from .user_router import user_dependency
 from app.database import get_db
 from app.repositories.board_game_repository import BoardGameRepository
 from typing import Annotated
-from app.schemas.board_games import BoardGameResponse, AddBoardGameRequest, RemoveBoardGameRequest
+from app.schemas.board_games import BoardGameResponse, AddBoardGameRequest, EditBoardGameRequest
 
 router = APIRouter(
     prefix="/user/{user_id}/board-games",
@@ -39,12 +39,22 @@ def get_board_games(user_id: int, current_user: user_dependency, repo: board_gam
 
     return board_games
 
-@router.delete("/")
-def delete_board_game(user_id: int, current_user:user_dependency, repo: board_game_repo_dependency, board_game: RemoveBoardGameRequest):
+@router.delete("/{board_game_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_board_game(user_id: int, board_game_id: int , current_user:user_dependency, repo: board_game_repo_dependency, ):
     try:
         check_user(user_id, current_user)
 
-        repo.delete_board_game(board_game.id, user_id)
+        repo.delete_board_game(board_game_id, user_id)
+
+    except NotFoundException as e:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+@router.patch("/{board_game_id}", status_code=status.HTTP_204_NO_CONTENT)
+def update_board_game(user_id: int, board_game_id: int, current_user:user_dependency, board_game_data: EditBoardGameRequest, repo: board_game_repo_dependency):
+    try:
+        check_user(user_id, current_user)
+
+        repo.update_board_game_title(user_id, board_game_id, board_game_data.new_title)
 
     except NotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

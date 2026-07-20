@@ -1,7 +1,6 @@
 from fastapi import APIRouter, HTTPException, status, Request, Depends
-from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse
-from starlette.status import HTTP_400_BAD_REQUEST, HTTP_201_CREATED, HTTP_200_OK, HTTP_422_UNPROCESSABLE_CONTENT
+from starlette.status import HTTP_200_OK, HTTP_422_UNPROCESSABLE_CONTENT
 from sqlalchemy.orm import Session
 from typing import Annotated
 from app.database import get_db
@@ -9,14 +8,12 @@ from app.repositories.player_repository import PlayerRepository
 from .index_router import check_user
 from app.custom_exceptions import NotFoundException, UnprocessableException
 from .user_router import user_dependency
-from app.schemas.player import PlayerResponse, PlayerCreate, PlayerRemove
+from app.schemas.player import PlayerResponse, PlayerCreate, UpdatePlayerRequest
 
 router = APIRouter(
     prefix="/user/{user_id}/players",
     tags=["players"]
 )
-
-templates = Jinja2Templates(directory="templates")
 
 def get_player_repo(db: Session = Depends(get_db)):
     return PlayerRepository(db)
@@ -51,30 +48,24 @@ def create_player(user_id: int,new_player: PlayerCreate, current_user: user_depe
         )
 
 
-@router.patch("/")
-def update_player(user_id: int, player_data: dict, current_user: user_dependency, player_repo: player_repo_dependency):
-    check_user(user_id, current_user)
-
-    player_id = player_data.get("player_id")
-    player_name = player_data.get("player_name")
-
+@router.patch("/", status_code=status.HTTP_204_NO_CONTENT)
+def update_player(user_id: int, player_id: int, player_data: UpdatePlayerRequest, current_user: user_dependency, player_repo: player_repo_dependency):
     try:
-        player_repo.update_player(user_id, player_id, player_name)
-        return JSONResponse(
-            status_code=HTTP_200_OK,
-            content={"message": "Player successfully updated"}
-        )
+        check_user(user_id, current_user)
+
+        player_repo.update_player(user_id, player_id, player_data.new_title)
+
     except NotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     except UnprocessableException as e:
         raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_CONTENT, detail=str(e))
 
 
-@router.delete("/")
-def delete_player(user_id: int, player: PlayerRemove, current_user: user_dependency, player_repo: player_repo_dependency):
+@router.delete("/{player_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_player(user_id: int, player_id: int, current_user: user_dependency, player_repo: player_repo_dependency):
     try:
         check_user(user_id, current_user)
 
-        player_repo.delete_player(player.id)
+        player_repo.delete_player(player_id)
     except NotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

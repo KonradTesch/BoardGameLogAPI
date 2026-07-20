@@ -1,5 +1,7 @@
 from app.schemas.base import ResponseModel, RequestModel
 
+class UpdatePlayerRequest(RequestModel):
+    new_name: str
 
 class PlayerResponse(ResponseModel):
     id: int
@@ -7,6 +9,3 @@ class PlayerResponse(ResponseModel):
 
 class PlayerCreate(RequestModel):
     name: str
-
-class PlayerRemove(RequestModel):
-    id: int

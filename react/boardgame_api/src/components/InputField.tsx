@@ -1,7 +1,7 @@
 import { useId } from 'react';
 
 interface InputFiledProps {
-    label: string;
+    label?: string;
     type: string;
     placeholder?: string;
     value?: string;
@@ -15,7 +15,7 @@ function InputField(props: InputFiledProps) {
 
     return (
         <div className="mb-3">
-            <label htmlFor={id} className="form-label">{props.label}</label>
+            {props.label && <label htmlFor={id} className="form-label">{props.label}</label>}
             <input type={props.type}
                    className="form-control"
                    id={id}

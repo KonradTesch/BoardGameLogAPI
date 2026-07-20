@@ -25,7 +25,7 @@ function DashboardPage() {
     const navigate = useNavigate();
 
     const { user } = useContext(AuthContext)!;
-    const { players, addPlayer, removePlayer, boardGames, addBoardGame, removeBoardGame } = useContext(UserDataContext)!;
+    const { players, addPlayer, removePlayer, editPlayer, boardGames, addBoardGame, removeBoardGame, editBoardGame } = useContext(UserDataContext)!;
 
     const [ sessions, setSessions] = useState<GameSession[] | null>(null)
     const [ selectedSession, setSelectedSession ] = useState<GameSession | null>(null)
@@ -137,12 +137,22 @@ function DashboardPage() {
 
     }
 
-    const handleEditPlayer = (player: Player) => {
+    const handleEditPlayer = async (editPlayerName: string, player: Player) => {
+        const editPlayerResult = await editPlayer(editPlayerName, player.id)
 
+        if (editPlayerResult.success) {
+            setPlayerInfo({message: editPlayerResult.message, variant: "success"});
+        }
+        else {
+            setPlayerInfo({message: editPlayerResult.error, variant: "warning"})
+        }
     }
 
     const handleAddPlayer = async () => {
         const addPlayerResult = await addPlayer(addPlayerName)
+
+        setAddPlayerName("");
+        setIsAddingPlayer(false);
 
         if (addPlayerResult.success) {
             setPlayerInfo({message: addPlayerResult.message, variant: "success"})
@@ -150,9 +160,6 @@ function DashboardPage() {
         else{
             setPlayerInfo({message: addPlayerResult.error, variant: "warning"})
         }
-
-        setAddPlayerName("");
-        setIsAddingPlayer(false);
     }
 
     const handleCancelAddPlayer = () => {
@@ -164,6 +171,7 @@ function DashboardPage() {
         const AddBoardGameResult = await addBoardGame(addBoardGameName);
 
         setAddBoardGameName("");
+        setIsAddingPlayer(false);
 
         if (AddBoardGameResult.success) {
             setBoardGameInfo({message: AddBoardGameResult.message, variant: "success"});
@@ -184,8 +192,15 @@ function DashboardPage() {
         }
     }
 
-    const handleEditBoardGame = (boardGame: BoardGame) => {
+    const handleEditBoardGame = async (editTitle: string, boardGame: BoardGame) => {
+        const editBoardGameResult = await editBoardGame(editTitle, boardGame.id);
 
+        if (editBoardGameResult.success) {
+            setBoardGameInfo({message: editBoardGameResult.message, variant: "success"});
+        }
+        else {
+            setBoardGameInfo({message: editBoardGameResult.error, variant: "warning"});
+        }
     }
 
     const handleOpenBoardGameStats = (boardGame: BoardGame) => {
@@ -238,7 +253,7 @@ function DashboardPage() {
                         player={player}
                         onDelete={() => handleDeletePlayer(player)}
                         onOpenStats={() => handleOpenPlayerStats(player)}
-                        onEdit={() => handleEditPlayer(player)}
+                        onEdit={(editName) => handleEditPlayer(editName, player)}
                     />))}
                     { isAddingPlayer &&
                     <li className="list-group-item d-flex justify-content-between align-items-center" key="-1">
@@ -287,7 +302,7 @@ function DashboardPage() {
                         boardGame={boardGame}
                         onDelete={() => handleDeleteBoardGame(boardGame)}
                         onOpenStats={() => handleOpenBoardGameStats(boardGame)}
-                        onEdit={() => handleEditBoardGame(boardGame)}
+                        onEdit={(editTitle) => handleEditBoardGame(editTitle, boardGame)}
                     />))}
                     { isAddingBoardGame &&
                     <li className="list-group-item d-flex justify-content-between align-items-center p-1" key="-1">

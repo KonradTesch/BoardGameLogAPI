@@ -9,5 +9,5 @@ class BoardGameResponse(ResponseModel):
 class AddBoardGameRequest(RequestModel):
     title: str
 
-class RemoveBoardGameRequest(RequestModel):
-    id: int
+class EditBoardGameRequest(RequestModel):
+    new_title: str
