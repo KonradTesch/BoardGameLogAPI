@@ -1,7 +1,7 @@
-import type {SessionPlayer} from "../../types/GameSession.ts";
+import type {SessionPlayerResponse} from "../../types/GameSession.ts";
 
 interface ScoreListProps {
-    players: SessionPlayer[];
+    players: SessionPlayerResponse[];
 }
 
 function ScoreList(props: ScoreListProps) {
@@ -10,11 +10,11 @@ function ScoreList(props: ScoreListProps) {
 
     return (
         <ul className="list-group list-group-flush">
-            {sortedPlayers.map((player: SessionPlayer, index) => (
+            {sortedPlayers.map((player: SessionPlayerResponse, index) => (
                 <li className="list-group-item d-flex justify-content-between align-items-center" key={"sore-" + index}>
                 <span>
                     {player.winner && <i className="bi bi-trophy-fill text-warning"></i>}
-                    <span>{player.name}</span>
+                    <span>{player.playerName}</span>
                 </span>
                 <span className="badge bg-primary rounded-pill fs-6">{player.score}</span>
             </li>

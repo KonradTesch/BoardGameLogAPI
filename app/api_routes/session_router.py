@@ -2,7 +2,6 @@ from datetime import date
 from fastapi import APIRouter, Request, HTTPException, status, Depends
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import JSONResponse
-from pydantic import BaseModel
 from starlette.status import HTTP_201_CREATED, HTTP_200_OK
 from sqlalchemy.orm import Session
 from typing import Annotated
@@ -12,7 +11,7 @@ from app.repositories.user_repository import UserRepository
 from .index_router import check_user
 from app.custom_exceptions import NotFoundException
 from .user_router import user_dependency, formatted_date
-from app.schemas.sessions import GameSessionResponse
+from app.schemas.sessions import GameSessionResponse, GameSessionRequest
 
 router = APIRouter(
     prefix="/user/{user_id}/sessions",
@@ -58,26 +57,18 @@ def session_details(user_id: int, session_id: int, request: Request, current_use
     return templates.TemplateResponse("session_details.html", context=context)
 
 
-@router.post("/")
-def create_session(user_id: int, session: GameSessionResponse, current_user: user_dependency, game_repo: game_session_repo_dependency):
+@router.post("/", response_model=GameSessionResponse, response_model_by_alias=True, status_code=HTTP_201_CREATED)
+def create_session(user_id: int, session: GameSessionRequest, current_user: user_dependency, game_session_repo: game_session_repo_dependency):
     check_user(user_id, current_user)
-
     try:
-        date_splits = session.date.split("-")
-        date_value = date(int(date_splits[0]), int(date_splits[1]), int(date_splits[2]))
-
-        game_repo.create_session(
-            game_id= int(session.board_game_id),
+        new_session = game_session_repo.create_session(
+            game_id= session.game_id,
             user_id = user_id,
-            date_value = date_value,
-            players=session.players,
+            date_value = session.date,
+            session_players = session.session_players
         )
+        return new_session
 
-        return JSONResponse(
-            status_code=HTTP_201_CREATED,
-            content={
-                "message": "Session successfully created",
-            })
     except NotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 

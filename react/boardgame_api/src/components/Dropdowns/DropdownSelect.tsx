@@ -1,15 +1,25 @@
+import {type ChangeEvent, useId} from "react";
+
 interface DropdownSelectProps {
-    label: string;
+    label?: string;
+    value: number | null;
     options: Map<number, string>;
     firstIsSelect?: boolean;
+    onChange: (e: ChangeEvent<HTMLSelectElement>) => void;
 }
 
-function DropdownSelect({label, options, firstIsSelect = false}: DropdownSelectProps) {
+function DropdownSelect({label, value, options, firstIsSelect = false, onChange}: DropdownSelectProps) {
+
+    const id = useId();
+
     return (
-        <select className="form-select" aria-label={label}>
+        <>
+            {label && <label htmlFor={id}>{label}</label>}
+            <select className="form-select" id={id} value={String(value)} aria-label={label} onChange={onChange}>
             {firstIsSelect && <option value="">Select</option>}
-            {Array.from(options).map(([index, option]) => <option value={index}>{option}</option>)}
-        </select>
+            {Array.from(options).map(([id, option]) => <option value={id}>{option}</option>)}
+            </select>
+        </>
     );
 }
 

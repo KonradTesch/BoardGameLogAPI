@@ -3,6 +3,7 @@ export function getDetailStringOrDefault(detail: any, defaultValue: string): str
         return detail;
     }
     else {
+        console.log(detail)
         return defaultValue;
     }
 }

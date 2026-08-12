@@ -3,33 +3,36 @@ from sqlalchemy import select, Sequence
 from sqlalchemy.orm import Session
 from app.models import Player, GameSession, SessionPlayer
 from app.custom_exceptions import NotFoundException
+from app.schemas.sessions import SessionPlayerRequest
 
 
 class GameSessionRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def create_session(self, game_id: int, user_id: int, date_value: date, players: list):
+    def create_session(self, game_id: int, user_id: int, date_value: date, session_players: list[SessionPlayerRequest]) -> GameSession:
         new_session = GameSession(game_id=game_id, user_id=user_id, date=date_value)
         self.db.add(new_session)
         self.db.commit()
         self.db.refresh(new_session)
 
-        for player in players:
-            player_id = player["id"]
-            player_exists = self.db.scalars(select(Player).where(Player.id == player_id)).first()
+        for player in session_players:
+            player_exists = self.db.scalars(select(Player).where(Player.id == player.player_id)).first()
             if player_exists is None:
-                raise NotFoundException("Player not found")
+                raise NotFoundException(f"Player not found")
 
             new_session_player = SessionPlayer(
                 session_id = new_session.id,
-                player_id = player_id,
-                score = player["score"],
-                winner = player["winner"]
+                player_id = player.player_id,
+                score = player.score,
+                winner = player.winner
             )
 
             self.db.add(new_session_player)
-            self.db.commit()
+
+        self.db.commit()
+
+        return new_session
 
     def validate_session(self, session_id: int) -> GameSession:
         game_session = self.db.scalars(select(GameSession).where(GameSession.id == session_id)).first()

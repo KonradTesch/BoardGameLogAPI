@@ -1,10 +1,11 @@
-from .base import ResponseModel
+from .base import ResponseModel, RequestModel
 from pydantic import model_validator
 import datetime
 
 class SessionPlayerResponse(ResponseModel):
-    name: str
-    score: int
+    player_id: int
+    player_name: str
+    score: float
     winner: bool
     
     @model_validator(mode="before")
@@ -12,7 +13,8 @@ class SessionPlayerResponse(ResponseModel):
     def extract_orm_player(cls, orm_player_relationship):
         if hasattr(orm_player_relationship, "player"):
             return {
-                "name": orm_player_relationship.player.name,
+                "player_id": orm_player_relationship.player_id,
+                "player_name": orm_player_relationship.player.name,
                 "score": orm_player_relationship.score,
                 "winner": orm_player_relationship.winner
             }
@@ -21,8 +23,9 @@ class SessionPlayerResponse(ResponseModel):
 class GameSessionResponse(ResponseModel):
     id: int
     date: datetime.date
+    game_id: int
     game_name: str
-    players: list[SessionPlayerResponse]
+    session_players: list[SessionPlayerResponse]
 
     @model_validator(mode="before")
     @classmethod
@@ -31,9 +34,23 @@ class GameSessionResponse(ResponseModel):
             return {
                 "id": orm_session.id,
                 "date": orm_session.date,
+                "game_id": orm_session.game_id,
                 "game_name": orm_session.game.title,
-                "players": orm_session.session_players
+                "session_players": orm_session.session_players
             }
         return orm_session
+
+class SessionPlayerRequest(RequestModel):
+    player_id: int
+    score: float
+    winner: bool
+
+class GameSessionRequest(RequestModel):
+    date: datetime.date
+    game_id: int
+    session_players: list[SessionPlayerRequest]
+
+
+
 
 

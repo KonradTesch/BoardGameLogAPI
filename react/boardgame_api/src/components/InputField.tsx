@@ -1,7 +1,7 @@
-import { useId } from 'react';
+import {type ReactNode, useId} from 'react';
 
-interface InputFiledProps {
-    label?: string;
+interface InputFieldProps {
+    label?: ReactNode;
     type: string;
     placeholder?: string;
     value?: string;
@@ -10,11 +10,11 @@ interface InputFiledProps {
     disabled?: boolean;
 }
 
-function InputField(props: InputFiledProps) {
+function InputField(props: InputFieldProps) {
     const id = useId();
 
     return (
-        <div className="mb-3">
+        <div>
             {props.label && <label htmlFor={id} className="form-label">{props.label}</label>}
             <input type={props.type}
                    className="form-control"

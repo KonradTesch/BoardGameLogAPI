@@ -76,6 +76,7 @@ function LoginPage() {
 
     return (
         <LoginCard isLogin={isLogin}>
+            <div className={"d-flex flex-column gap-3"}>
                 <InputField
                     label="Username:"
                     type="text"
@@ -94,16 +95,18 @@ function LoginPage() {
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
                 />}
-                <div className ="text-center">
-                    {infoMessage && <InformationText infoText={infoMessage}/>}
-                    <Button
-                        variant="primary"
-                        label={isLogin ? "Login":"Register"}
-                        onClick={isLogin ? handleLogin :handleSignup}
-                        disabled={!isValidInput}
-                    />
-                    <p className="mt-2"> {isLogin ? "No account yet?" : "Already have an account?"} <span className="fw-bold toggle-link" onClick={toggleLogin}>{isLogin ? "Register" : "Login"} here</span></p>
-                </div>
+            </div>
+
+            <div className ="text-center">
+                {infoMessage && <InformationText infoText={infoMessage}/>}
+                <Button
+                    variant="primary"
+                    label={isLogin ? "Login":"Register"}
+                    onClick={isLogin ? handleLogin :handleSignup}
+                    disabled={!isValidInput}
+                />
+                <p className="mt-2"> {isLogin ? "No account yet?" : "Already have an account?"} <span className="fw-bold toggle-link" onClick={toggleLogin}>{isLogin ? "Register" : "Login"} here</span></p>
+            </div>
             </LoginCard>
     );
 }

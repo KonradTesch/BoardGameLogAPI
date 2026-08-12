@@ -2,9 +2,9 @@ import '../styles/DashboardPage.css';
 import PageContainer from "../components/PageContainer.tsx";
 import FormCard from "../components/Cards/FormCard.tsx";
 import Button from "../components/Button/Button.tsx";
-import {useContext, useEffect, useRef, useState} from "react";
+import {useContext, useRef, useState} from "react";
 import {AuthContext} from "../context/AuthContext.tsx";
-import type {GameSession} from "../types/GameSession.ts";
+import type {GameSessionResponse} from "../types/GameSession.ts";
 import type {InfoText} from "../types/InfoText.ts";
 import InformationText from "../components/Text/InformationText.tsx";
 import SessionList from "../components/Lists/SessionList.tsx";
@@ -25,11 +25,14 @@ function DashboardPage() {
     const navigate = useNavigate();
 
     const { user } = useContext(AuthContext)!;
-    const { players, addPlayer, removePlayer, editPlayer, boardGames, addBoardGame, removeBoardGame, editBoardGame } = useContext(UserDataContext)!;
+    const { players, addPlayer, removePlayer, updatePlayer,
+        boardGames, addBoardGame, removeBoardGame, updateBoardGame,
+        sessions, removeSession,
+    } = useContext(UserDataContext)!;
 
-    const [ sessions, setSessions] = useState<GameSession[] | null>(null)
-    const [ selectedSession, setSelectedSession ] = useState<GameSession | null>(null)
-    const [ sessionsToDelete, setSessionsToDelete ] = useState<GameSession[]>([]);
+
+    const [ selectedSession, setSelectedSession ] = useState<GameSessionResponse | null>(null)
+    const [ sessionsToDelete, setSessionsToDelete ] = useState<GameSessionResponse[]>([]);
     const [ sessionsInfo, setSessionsInfo] = useState<InfoText>({message:""})
 
     const [ isAddingPlayer, setIsAddingPlayer ] = useState<boolean>(false)
@@ -41,30 +44,9 @@ function DashboardPage() {
     const [ boardGameInfo, setBoardGameInfo ] = useState<InfoText>({message:""})
 
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const sessionsToDeleteRef = useRef<GameSession[]>([]);
+    const sessionsToDeleteRef = useRef<GameSessionResponse[]>([]);
 
-    const getGameSession = async () => {
-        const game_session = await fetch(`/api/user/${user?.id}/sessions/`, {
-        method: "GET",
-        credentials: "include"
-        });
-
-        if (game_session.ok) {
-            const data = await game_session.json();
-            setSessions(data)
-        }
-        else {
-            setSessionsInfo({message:"Error loading game sessions.", variant: "warning"})
-        }
-    }
-
-    useEffect(() => {
-        if (user) {
-            void getGameSession();
-        }
-    }, [user]);
-
-    const handleSessionsToDelete = (session: GameSession) => {
+    const handleSessionsToDelete = (session: GameSessionResponse) => {
         sessionsToDeleteRef.current = [...sessionsToDeleteRef.current, session];
         setSessionsToDelete(prev =>  [...prev, session]);
 
@@ -87,34 +69,31 @@ function DashboardPage() {
         sessionsToDeleteRef.current = [];
     };
 
-    const deleteSessions = async (pendingSessions: GameSession[]) => {
-        let errors: number[] = []
+    const deleteSessions = async (pendingSessions: GameSessionResponse[]) => {
+        let errorIds: number[] = []
+        let errorMessages: string[] = []
         for (const session of pendingSessions) {
-            const response = await fetch(`/api/user/${user?.id}/sessions/${session.id}`, {
-                method: "DELETE",
-                credentials: "include"
-            })
+            const removeSessionResult = await removeSession(session.id);
 
-            if (response.ok) {
-                setSessions(prev => prev?.filter((x) => x !== session) ?? null)
+            if (!removeSessionResult.success) {
+                errorIds.push(session.id);
+                errorMessages.push(removeSessionResult.error);
             }
-            else {
-                errors = [...errors, session.id]
-            }
+
         }
-        if (errors.length > 0) {
-            setSessionsInfo({message: `Error deleting sessions. IDs:(${errors.join(", ")}`})
+        if (errorIds.length > 0) {
+            setSessionsInfo({message: `Error deleting sessions. IDs: ${errorIds.join(", ")}\n${errorMessages.join("\n")}`})
         }
         else {
             setSessionsInfo({message: ""})
         }
     };
 
-    const handleOpenDetails = (session: GameSession) => {
+    const handleOpenSessionDetails = (session: GameSessionResponse) => {
         setSelectedSession(session);
     };
 
-    const handleEditSession = (session: GameSession) => {
+    const handleEditSession = () => {
         navigate(ROUTES.editSessions.to(user!.id))
     }
 
@@ -123,7 +102,7 @@ function DashboardPage() {
     }
 
     const handleDeletePlayer = async (player: Player) => {
-        const removePlayerResult = await removePlayer(player);
+        const removePlayerResult = await removePlayer(player.id);
 
         if (removePlayerResult.success) {
             setPlayerInfo({message: removePlayerResult.message, variant: "success"});
@@ -133,12 +112,12 @@ function DashboardPage() {
         }
     }
 
-    const handleOpenPlayerStats = (player: Player) => {
+    const handleOpenPlayerStats = () => {
 
     }
 
     const handleEditPlayer = async (editPlayerName: string, player: Player) => {
-        const editPlayerResult = await editPlayer(editPlayerName, player.id)
+        const editPlayerResult = await updatePlayer(editPlayerName, player.id)
 
         if (editPlayerResult.success) {
             setPlayerInfo({message: editPlayerResult.message, variant: "success"});
@@ -182,7 +161,7 @@ function DashboardPage() {
     }
 
     const handleDeleteBoardGame = async (boardGame: BoardGame) => {
-        const removeBoardGameResult = await removeBoardGame(boardGame);
+        const removeBoardGameResult = await removeBoardGame(boardGame.id);
 
         if (removeBoardGameResult.success) {
             setBoardGameInfo({message: removeBoardGameResult.message, variant: "success"});
@@ -193,7 +172,7 @@ function DashboardPage() {
     }
 
     const handleEditBoardGame = async (editTitle: string, boardGame: BoardGame) => {
-        const editBoardGameResult = await editBoardGame(editTitle, boardGame.id);
+        const editBoardGameResult = await updateBoardGame(editTitle, boardGame.id);
 
         if (editBoardGameResult.success) {
             setBoardGameInfo({message: editBoardGameResult.message, variant: "success"});
@@ -203,7 +182,7 @@ function DashboardPage() {
         }
     }
 
-    const handleOpenBoardGameStats = (boardGame: BoardGame) => {
+    const handleOpenBoardGameStats = () => {
 
     }
 
@@ -219,7 +198,7 @@ function DashboardPage() {
                 title={"Session Info"}
                 footer={
                     <>
-                        <Button label="Edit" onClick={() =>handleEditSession(selectedSession!)}/>
+                        <Button label="Edit" onClick={() =>handleEditSession()}/>
                         <Button label="Close" data-bs-dismiss="modal" variant="secondary" />
                     </>
                     }>
@@ -230,7 +209,7 @@ function DashboardPage() {
                     sessions={sessions}
                     sessionsToDelete={sessionsToDelete}
                     onDelete={handleSessionsToDelete}
-                    onOpenDetails={handleOpenDetails}
+                    onOpenDetails={handleOpenSessionDetails}
                     onEditSession={handleEditSession}
                     waitForLoading={true}
                 />
@@ -252,7 +231,7 @@ function DashboardPage() {
                         index={index}
                         player={player}
                         onDelete={() => handleDeletePlayer(player)}
-                        onOpenStats={() => handleOpenPlayerStats(player)}
+                        onOpenStats={handleOpenPlayerStats}
                         onEdit={(editName) => handleEditPlayer(editName, player)}
                     />))}
                     { isAddingPlayer &&
@@ -301,7 +280,7 @@ function DashboardPage() {
                         index={index}
                         boardGame={boardGame}
                         onDelete={() => handleDeleteBoardGame(boardGame)}
-                        onOpenStats={() => handleOpenBoardGameStats(boardGame)}
+                        onOpenStats={handleOpenBoardGameStats}
                         onEdit={(editTitle) => handleEditBoardGame(editTitle, boardGame)}
                     />))}
                     { isAddingBoardGame &&
