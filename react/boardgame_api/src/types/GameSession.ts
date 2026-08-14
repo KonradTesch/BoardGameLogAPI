@@ -10,7 +10,7 @@ export interface GameSessionResponse {
     date: string;
     gameId: number;
     gameName: string,
-    sessionPlayers: SessionPlayerRequest[]
+    sessionPlayers: SessionPlayerResponse[]
 }
 
 export interface SessionPlayerRequest {

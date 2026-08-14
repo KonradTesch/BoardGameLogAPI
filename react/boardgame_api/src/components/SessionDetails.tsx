@@ -1,9 +1,9 @@
-import type {GameSession} from "../types/GameSession.ts";
+import type {GameSessionResponse} from "../types/GameSession.ts";
 import FormCard from "./Cards/FormCard.tsx";
 import ScoreList from "./Lists/ScoreList.tsx";
 
 interface SessionDetailsProps {
-    session: GameSession;
+    session: GameSessionResponse;
 }
 
 function SessionDetails(props: SessionDetailsProps) {
@@ -15,7 +15,7 @@ function SessionDetails(props: SessionDetailsProps) {
             </p>
         </div>
         <FormCard header="Score">
-            <ScoreList players={props.session.players} />
+            <ScoreList players={props.session.sessionPlayers} />
         </FormCard>
     </>);
 }
