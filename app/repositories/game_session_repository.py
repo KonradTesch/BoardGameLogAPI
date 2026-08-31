@@ -3,7 +3,7 @@ from sqlalchemy import select, Sequence
 from sqlalchemy.orm import Session
 from app.models import Player, GameSession, SessionPlayer
 from app.custom_exceptions import NotFoundException
-from app.schemas.sessions import SessionPlayerRequest
+from app.schemas.session import SessionPlayerRequest
 
 
 class GameSessionRepository:

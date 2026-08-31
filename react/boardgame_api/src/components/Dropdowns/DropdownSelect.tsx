@@ -15,7 +15,12 @@ function DropdownSelect({label, value, options, firstIsSelect = false, onChange}
     return (
         <>
             {label && <label htmlFor={id}>{label}</label>}
-            <select className="form-select" id={id} value={String(value)} aria-label={label} onChange={onChange}>
+            <select
+                className="form-select"
+                id={id} value={String(value)}
+                aria-label={label}
+                onChange={onChange}
+            >
             {firstIsSelect && <option value="">Select</option>}
             {Array.from(options).map(([id, option]) => <option value={id}>{option}</option>)}
             </select>

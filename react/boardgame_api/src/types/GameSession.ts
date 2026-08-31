@@ -1,3 +1,5 @@
+import type {InfoText} from "./InfoText.ts";
+
 export interface SessionPlayerResponse {
     playerId: number;
     playerName: string;
@@ -30,4 +32,5 @@ export interface SessionPlayerFormRow {
     playerId: number | null;
     score: number;
     winner: boolean;
+    info?: InfoText;
 }

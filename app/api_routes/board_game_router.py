@@ -7,7 +7,7 @@ from .user_router import user_dependency
 from app.database import get_db
 from app.repositories.board_game_repository import BoardGameRepository
 from typing import Annotated
-from app.schemas.board_games import BoardGameResponse, AddBoardGameRequest, EditBoardGameRequest
+from app.schemas.board_game import BoardGameResponse, AddBoardGameRequest, EditBoardGameRequest
 
 router = APIRouter(
     prefix="/user/{user_id}/board-games",

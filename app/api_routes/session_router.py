@@ -11,7 +11,7 @@ from app.repositories.user_repository import UserRepository
 from .index_router import check_user
 from app.custom_exceptions import NotFoundException
 from .user_router import user_dependency, formatted_date
-from app.schemas.sessions import GameSessionResponse, GameSessionRequest
+from app.schemas.session import GameSessionResponse, GameSessionRequest
 
 router = APIRouter(
     prefix="/user/{user_id}/sessions",
@@ -73,11 +73,9 @@ def create_session(user_id: int, session: GameSessionRequest, current_user: user
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
 
-@router.patch("/{session_id}")
-def update_session(user_id: int, session_id: int, session: dict, current_user: user_dependency, game_repo: game_session_repo_dependency):
+@router.patch("/{session_id}", response_model=GameSessionResponse, response_model_by_alias=True)
+def update_session(user_id: int, session_id: int, session: GameSessionRequest, current_user: user_dependency, game_repo: game_session_repo_dependency):
     check_user(user_id, current_user)
-
-    game_id = int(session.get("game_id"))
 
     date_splits = session.get("date").split("-")
     date_value = date(int(date_splits[0]), int(date_splits[1]), int(date_splits[2]))
@@ -87,7 +85,7 @@ def update_session(user_id: int, session_id: int, session: dict, current_user: u
         players.append(player)
 
     try:
-        game_repo.update_session(session_id, game_id, date_value, players)
+        game_repo.update_session(session_id, session.game_id, date_value, players)
         return JSONResponse(
             status_code=HTTP_200_OK,
             content={"message": "Session successfully updated"}
