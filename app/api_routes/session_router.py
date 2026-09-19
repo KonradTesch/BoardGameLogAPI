@@ -11,7 +11,8 @@ from app.repositories.user_repository import UserRepository
 from .index_router import check_user
 from app.custom_exceptions import NotFoundException
 from .user_router import user_dependency, formatted_date
-from app.schemas.session import GameSessionResponse, GameSessionRequest
+from app.schemas.session import GameSessionResponse, GameSessionRequest, SessionPlayerRequest
+from app.domain.session import GameSessionData, SessionPlayerData
 
 router = APIRouter(
     prefix="/user/{user_id}/sessions",
@@ -61,12 +62,15 @@ def session_details(user_id: int, session_id: int, request: Request, current_use
 def create_session(user_id: int, session: GameSessionRequest, current_user: user_dependency, game_session_repo: game_session_repo_dependency):
     check_user(user_id, current_user)
     try:
-        new_session = game_session_repo.create_session(
-            game_id= session.game_id,
+
+        new_session_data = GameSessionData(
+            game_id = session.game_id,
             user_id = user_id,
-            date_value = session.date,
-            session_players = session.session_players
+            date = session.date,
+            session_players= [SessionPlayerData(player_id=player.player_id, score=player.score, winner=player.winner) for player in session.session_players]
         )
+
+        new_session = game_session_repo.create_session(new_session_data)
         return new_session
 
     except NotFoundException as e:

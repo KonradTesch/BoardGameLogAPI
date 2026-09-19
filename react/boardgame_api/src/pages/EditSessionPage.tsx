@@ -13,6 +13,7 @@ import InformationText from "../components/Text/InformationText.tsx";
 import {useNavigate} from "react-router-dom";
 import {ROUTES} from "../types/routes.ts";
 import {AuthContext} from "../context/AuthContext.tsx";
+import {validateSessionForm} from "../util/ValidateSessionInput.ts";
 
 function EditSessionPage(){
 
@@ -21,31 +22,44 @@ function EditSessionPage(){
     const { boardGames, players, addSession } = useContext(UserDataContext)!;
     const { user } = useContext(AuthContext)!;
 
-    const sortedBoardGames = useMemo(() => boardGames.toSorted((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: "base" })), [boardGames]);
-    const sortedPlayers = useMemo(() => players.toSorted((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" })), [players]);
-
-    const boardGameOptions = new Map<number, string>(sortedBoardGames.map((boardGame: BoardGame) => [boardGame.id, boardGame.title]))
-
     const [boardGameId, setBoardGameId] = useState<number | null>(null);
     // sv-SE locale formats as YYYY-MM-DD, which <input type="date"> requires.
     const [date, setDate] = useState(() => new Date().toLocaleDateString("sv-SE"));
-    const [sessionPlayerRows, setSessionPlayerRows] = useState<SessionPlayerFormRow[]>(() =>[ {rowId: crypto.randomUUID(),playerId: null, score:0, winner:false}])
+    const [sessionPlayerRows, setSessionPlayerRows] = useState<SessionPlayerFormRow[]>(() =>[ {rowId: crypto.randomUUID(),playerId: null, score:"", winner:false}])
 
 
     const [hasSubmitted, setHasSubmitted] = useState(false)
     const [addSessionInfo, setAddSessionInfo] = useState<InfoText>({message: ""})
 
+    const sortedBoardGames = useMemo(
+        () => boardGames.toSorted((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: "base" })),
+        [boardGames]
+    );
+    const sortedPlayers = useMemo(
+        () => players.toSorted((a, b) => a.name.localeCompare(b.name, undefined, { sensitivity: "base" })),
+        [players]
+    );
+    const errors = useMemo(
+        () => validateSessionForm(boardGameId, date, sessionPlayerRows),
+        [boardGameId, date, sessionPlayerRows]
+    );
+
+    const boardGameOptions = new Map<number, string>(sortedBoardGames.map((boardGame: BoardGame) => [boardGame.id, boardGame.title]))
+
+    const hasErrors = Boolean(errors.boardGame || errors.date || errors.duplicatePlayers)
+    || Object.keys(errors.rows).length > 0;
+
     const handleCreateSession = async () => {
         setHasSubmitted(true);
 
-        if (!validateInput())
+        if (hasErrors)
             return;
 
         const sessionPlayers: SessionPlayerRequest[] = sessionPlayerRows
             .filter((row: SessionPlayerFormRow) => row.playerId !== null)
             .map((row) => ({
                 playerId: row.playerId as number,
-                score: row.score,
+                score: Number(row.score),
                 winner: row.winner
             }))
 
@@ -67,12 +81,12 @@ function EditSessionPage(){
     }
 
     const handleAddPlayer = () => {
-        const newPlayer: SessionPlayerFormRow = {rowId: crypto.randomUUID(), playerId: null,score: 0, winner:false };
+        const newPlayer: SessionPlayerFormRow = {rowId: crypto.randomUUID(), playerId: null,score: "", winner:false };
 
         setSessionPlayerRows(prev => [...prev, newPlayer]);
     }
 
-    const handleChangePlayerID = (setIndex: number, newPlayerId: number) => {
+    const handleChangePlayerID = (setIndex: number, newPlayerId: number | null) => {
         setSessionPlayerRows(prev => prev.map((sessionPlayer, index) =>
             index === setIndex
             ? {...sessionPlayer, playerId: newPlayerId}
@@ -80,7 +94,7 @@ function EditSessionPage(){
         ))
     }
 
-    const handleChangeScore = (setIndex: number, newScore: number) => {
+    const handleChangeScore = (setIndex: number, newScore: string) => {
         setSessionPlayerRows(prev => prev.map((sessionPlayer , index) =>
             index === setIndex
             ? {...sessionPlayer, score: newScore}
@@ -100,24 +114,6 @@ function EditSessionPage(){
         setSessionPlayerRows(prev => prev.filter((_sessionPlayer, index) => index != atIndex))
     }
 
-    const validateInput = (): boolean => {
-        let validInput: boolean = true;
-
-        if (boardGameId === null)
-            validInput = false;
-
-        const currentDateString = new Date().toLocaleDateString("sv-SE");
-
-        if (date > currentDateString)
-            validInput = false;
-
-        for (const player of sessionPlayerRows) {
-            if (player.playerId == null)
-                validInput = false;
-        }
-        return validInput;
-    }
-
     return (
     <PageContainer>
         <div className="mb-4">
@@ -128,12 +124,12 @@ function EditSessionPage(){
                     options={boardGameOptions}
                     firstIsSelect={true}
                     value={boardGameId}
-                    onChange={(e) => setBoardGameId(Number(e.target.value))}
+                    onChange={(e) => setBoardGameId(e.target.value === "" ? null :  Number(e.target.value))}
                 />
             </h3>
-            {hasSubmitted && boardGameId == null &&
+            {hasSubmitted && errors.boardGame &&
                 <InformationText infoText={{
-                message: "Choose a boardgame",
+                message: errors.boardGame,
                 variant: "danger"
             }} />}
             <p className="text-body-secondary mb-0">
@@ -143,9 +139,9 @@ function EditSessionPage(){
                     value={date}
                     onChange={(e) => setDate(e.target.value)}
                 />
-                {hasSubmitted && date > new Date().toLocaleDateString("sv-SE") &&
+                {hasSubmitted && errors.date &&
                 <InformationText infoText={{
-                message: "The date is in the future.",
+                message: errors.date,
                 variant: "danger"
             }} />}
             </p>
@@ -159,6 +155,7 @@ function EditSessionPage(){
                 onChangeWinner={handleChangeWinner}
                 onRemoveSessionPlayer={handleRemovePlayer}
                 hasSubmitted={hasSubmitted}
+                errors={errors}
             />
             <div className="d-flex justify-content-center align-items-center">
                 <Button label="Add Player" variant="primary" onClick={handleAddPlayer} />

@@ -1,22 +1,22 @@
 from datetime import date
 from sqlalchemy import select, Sequence
 from sqlalchemy.orm import Session
+from app.domain.session import GameSessionData
 from app.models import Player, GameSession, SessionPlayer
 from app.custom_exceptions import NotFoundException
-from app.schemas.session import SessionPlayerRequest
+
 
 
 class GameSessionRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def create_session(self, game_id: int, user_id: int, date_value: date, session_players: list[SessionPlayerRequest]) -> GameSession:
-        new_session = GameSession(game_id=game_id, user_id=user_id, date=date_value)
+    def create_session(self, session: GameSessionData) -> GameSession:
+        new_session = GameSession(game_id=session.game_id, user_id=session.user_id, date=session.date)
         self.db.add(new_session)
-        self.db.commit()
-        self.db.refresh(new_session)
+        self.db.flush()
 
-        for player in session_players:
+        for player in session.session_players:
             player_exists = self.db.scalars(select(Player).where(Player.id == player.player_id)).first()
             if player_exists is None:
                 raise NotFoundException(f"Player not found")
@@ -42,19 +42,19 @@ class GameSessionRepository:
 
         return game_session
 
-    def update_session(self, session_id: int, game_id: int, date_value: date, players: list):
+    def update_session(self, session_id: int, session_data: GameSessionData) -> GameSession:
 
         game_session = self.validate_session(session_id)
 
-        game_session.game_id = game_id
-        game_session.date = date_value
+        game_session.game_id = session_data.game_id
+        game_session.date = session_data.date
 
         session_players_before = list(self.db.scalars(
             select(SessionPlayer).where(SessionPlayer.session_id == session_id)
         ).all())
 
-        for player in players:
-            player_id = player["player_id"]
+        for player in session_data.session_players:
+            player_id = player.player_id
 
             #current players
             session_player = self.db.scalars(
@@ -67,16 +67,16 @@ class GameSessionRepository:
                 new_session_player = SessionPlayer(
                     session_id = game_session.id,
                     player_id = player_id,
-                    score = player["score"],
-                    winner = player["winner"]
+                    score = player.score,
+                    winner = player.winner
                 )
 
                 self.db.add(new_session_player)
 
 
             else:
-                session_player.score = player["score"]
-                session_player.winner = player["winner"]
+                session_player.score = player.score
+                session_player.winner = player.winner
 
                 session_players_before.remove(session_player)
 

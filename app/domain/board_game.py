@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 
 @dataclass
-class BoardGame:
+class BoardGameData:
     id: int
     title: str
     user_id: int

@@ -1,6 +1,5 @@
 from dataclasses import dataclass
-from datetime import datetime
-
+from datetime import date
 
 @dataclass
 class SessionPlayerData:
@@ -10,7 +9,7 @@ class SessionPlayerData:
 
 @dataclass
 class GameSessionData:
-    id: int
-    date: datetime.date
+    date: date
     game_id: int
+    user_id: int
     session_players: list [SessionPlayerData]

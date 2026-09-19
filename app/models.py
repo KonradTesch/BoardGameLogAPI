@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, Date, ForeignKey
+from sqlalchemy import Column, Integer, Float, String, Boolean, Date, ForeignKey
 from sqlalchemy.orm import relationship, declarative_base
 
 Base = declarative_base()
@@ -48,7 +48,7 @@ class SessionPlayer(Base):
     __tablename__ = 'session_player'
     session_id = Column(Integer, ForeignKey('sessions.id'), primary_key=True)
     player_id = Column(Integer, ForeignKey('players.id'), primary_key=True)
-    score = Column(Integer)
+    score = Column(Float)
     winner = Column(Boolean, nullable=False)
 
     session = relationship('GameSession', back_populates='session_players')
