@@ -4,7 +4,6 @@ import FormCard from "../components/Cards/FormCard.tsx";
 import Button from "../components/Button/Button.tsx";
 import {useContext, useRef, useState} from "react";
 import {AuthContext} from "../context/AuthContext.tsx";
-import type {GameSessionResponse} from "../types/GameSession.ts";
 import type {InfoText} from "../types/InfoText.ts";
 import InformationText from "../components/Text/InformationText.tsx";
 import SessionList from "../components/Lists/SessionList.tsx";
@@ -31,8 +30,10 @@ function DashboardPage() {
     } = useContext(UserDataContext)!;
 
 
-    const [ selectedSession, setSelectedSession ] = useState<GameSessionResponse | null>(null)
-    const [ sessionsToDelete, setSessionsToDelete ] = useState<GameSessionResponse[]>([]);
+    const [ selectedSessionId, setSelectedSessionId ] = useState<number | null>(null)
+    const selectedSession = sessions.find((session) => session.id === selectedSessionId);
+
+    const [ sessionsToDelete, setSessionsToDelete ] = useState<number[]>([]);
     const [ sessionsInfo, setSessionsInfo] = useState<InfoText>({message:""})
 
     const [ isAddingPlayer, setIsAddingPlayer ] = useState<boolean>(false)
@@ -44,11 +45,11 @@ function DashboardPage() {
     const [ boardGameInfo, setBoardGameInfo ] = useState<InfoText>({message:""})
 
     const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const sessionsToDeleteRef = useRef<GameSessionResponse[]>([]);
+    const sessionsToDeleteRef = useRef<number[]>([]);
 
-    const handleSessionsToDelete = (session: GameSessionResponse) => {
-        sessionsToDeleteRef.current = [...sessionsToDeleteRef.current, session];
-        setSessionsToDelete(prev =>  [...prev, session]);
+    const handleSessionsToDelete = (sessionId: number) => {
+        sessionsToDeleteRef.current = [...sessionsToDeleteRef.current, sessionId];
+        setSessionsToDelete(prev =>  [...prev, sessionId]);
 
         if (timerRef.current) {
             clearTimeout(timerRef.current);
@@ -69,14 +70,14 @@ function DashboardPage() {
         sessionsToDeleteRef.current = [];
     };
 
-    const deleteSessions = async (pendingSessions: GameSessionResponse[]) => {
+    const deleteSessions = async (pendingSessions: number[]) => {
         let errorIds: number[] = []
         let errorMessages: string[] = []
-        for (const session of pendingSessions) {
-            const removeSessionResult = await removeSession(session.id);
+        for (const sessionId of pendingSessions) {
+            const removeSessionResult = await removeSession(sessionId);
 
             if (!removeSessionResult.success) {
-                errorIds.push(session.id);
+                errorIds.push(sessionId);
                 errorMessages.push(removeSessionResult.error);
             }
 
@@ -89,16 +90,16 @@ function DashboardPage() {
         }
     };
 
-    const handleOpenSessionDetails = (session: GameSessionResponse) => {
-        setSelectedSession(session);
+    const handleOpenSessionDetails = (sessionId: number) => {
+        setSelectedSessionId(sessionId);
     };
 
-    const handleEditSession = () => {
-        navigate(ROUTES.editSessions.to(user!.id))
+    const handleEditSession = (sessionId: number) => {
+        navigate(ROUTES.editSessions.to(user!.id, sessionId))
     }
 
     const handleAddSession = () => {
-        navigate(ROUTES.editSessions.to(user!.id))
+        navigate(ROUTES.newSession.to(user!.id))
     }
 
     const handleDeletePlayer = async (player: Player) => {
@@ -198,7 +199,7 @@ function DashboardPage() {
                 title={"Session Info"}
                 footer={
                     <>
-                        <Button label="Edit" onClick={() =>handleEditSession()}/>
+                        <Button label="Edit" onClick={() =>handleEditSession(selectedSession!.id)}/>
                         <Button label="Close" data-bs-dismiss="modal" variant="secondary" />
                     </>
                     }>
@@ -226,13 +227,13 @@ function DashboardPage() {
             </FormCard>
             <FormCard header={<><i className="bi bi-person-fill" /> Players</>}>
                 <DashboardList waitForLoading={true}>
-                    {players?.map((player: Player, index: number) =>(
+                    {players?.map((player: Player) =>(
                     <PlayerListItem
-                        index={index}
                         player={player}
                         onDelete={() => handleDeletePlayer(player)}
                         onOpenStats={handleOpenPlayerStats}
                         onEdit={(editName) => handleEditPlayer(editName, player)}
+                        key={player.id}
                     />))}
                     { isAddingPlayer &&
                     <li className="list-group-item d-flex justify-content-between align-items-center" key="-1">
@@ -275,13 +276,13 @@ function DashboardPage() {
 
             <FormCard header={<><i className="bi bi-dice-5-fill" /> Board Games</>}>
                 <DashboardList waitForLoading={true}>
-                    {boardGames?.map((boardGame: BoardGame, index: number) =>(
+                    {boardGames?.map((boardGame: BoardGame) =>(
                     <BoardGameListItem
-                        index={index}
                         boardGame={boardGame}
                         onDelete={() => handleDeleteBoardGame(boardGame)}
                         onOpenStats={handleOpenBoardGameStats}
                         onEdit={(editTitle) => handleEditBoardGame(editTitle, boardGame)}
+                        key={boardGame.id}
                     />))}
                     { isAddingBoardGame &&
                     <li className="list-group-item d-flex justify-content-between align-items-center p-1" key="-1">

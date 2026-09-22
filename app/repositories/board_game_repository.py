@@ -1,5 +1,6 @@
 from app.models import BoardGame
-from sqlalchemy import select, Sequence
+from sqlalchemy import select
+from collections.abc import Sequence
 from sqlalchemy.orm import Session
 from typing import Optional
 from app.custom_exceptions import NotFoundException, UnprocessableException

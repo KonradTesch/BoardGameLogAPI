@@ -5,7 +5,6 @@ import InputField from "../InputField.tsx";
 import Button from "../Button/Button.tsx";
 
 interface PlayerListProps {
-    index: number;
     player: Player;
     onDelete: () => void;
     onOpenStats: () => void;
@@ -23,7 +22,7 @@ function PlayerListItem(props: PlayerListProps) {
     }
 
     return (
-        <li className="list-group-item d-flex justify-content-between align-items-center" key={props.index}>
+        <li className="list-group-item d-flex justify-content-between align-items-center">
             {editMode
                 ?
                 <>

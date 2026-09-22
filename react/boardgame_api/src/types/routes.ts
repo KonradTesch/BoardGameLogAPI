@@ -12,7 +12,11 @@ export const ROUTES = {
         to: (userId: number) => `/user/${userId}/settings`
     },
     editSessions: {
-        path: "/user/:userId/sessions/edit",
-        to: (userId: number) => `/user/${userId}/sessions/edit`
+        path: "/user/:userId/sessions/:sessionId/edit",
+        to: (userId: number, sessionId: number) => `/user/${userId}/sessions/${sessionId}/edit`
+    },
+    newSession: {
+        path: "/user/:userId/sessions/new",
+        to: (userId: number) => `/user/${userId}/sessions/new`
     }
 }

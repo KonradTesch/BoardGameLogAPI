@@ -22,6 +22,7 @@ function AppContent() {
                 <Route path={ROUTES.dashboard.path} element={<DashboardPage />} />
                 <Route path={ROUTES.accountSettings.path} element={<AccountSettingsPage />} />
                 <Route path={ROUTES.editSessions.path} element={<EditSessionPage />} />
+                <Route path={ROUTES.newSession.path} element={<EditSessionPage />} />
             </Routes>
         </>
     );

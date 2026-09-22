@@ -5,7 +5,6 @@ import Button from "../Button/Button.tsx";
 import InputField from "../InputField.tsx";
 
 interface BoardGameListProps {
-    index: number;
     boardGame: BoardGame;
     onDelete: () => void;
     onOpenStats: () => void;
@@ -23,7 +22,7 @@ function BoardGameListItem(props: BoardGameListProps) {
     }
 
     return (
-        <li className="list-group-item d-flex justify-content-between align-items-center" key={props.index}>
+        <li className="list-group-item d-flex justify-content-between align-items-center">
             {editMode
                 ?
                 <>

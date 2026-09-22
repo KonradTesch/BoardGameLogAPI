@@ -10,6 +10,7 @@ type RequestResult =
         | { success: false, error: string };
 
 interface UserDateContextType {
+    isLoading: boolean;
     boardGames: BoardGame[];
     addBoardGame: (newBoardGameTite: string) => Promise<RequestResult>;
     removeBoardGame: (delBoardGameId: number) => Promise<RequestResult>;
@@ -27,6 +28,8 @@ interface UserDateContextType {
 export const UserDataContext = createContext<UserDateContextType | null>(null)
 
 export function UserDataProvider({ children }: { children: ReactNode}) {
+    const [isLoading, setIsLoading] = useState(true);
+
     const [boardGames, setBoardGames] = useState<BoardGame[]>([]);
     const [players, setPlayers] = useState<Player[]>([]);
     const [sessions, setSessions] = useState<GameSessionResponse[]>([]);
@@ -70,11 +73,33 @@ export function UserDataProvider({ children }: { children: ReactNode}) {
     }, [user])
 
     useEffect(() => {
-        if (user) {
-            void getPlayers();
-            void getBoardGames();
-            void getSessions();
+        const dataCalls = async () =>
+        {
+            try {
+                setPlayers([]);
+                setBoardGames([]);
+                setSessions([]);
+
+                if (user) {
+                    setIsLoading(true);
+
+                    await Promise.all(
+                        [
+                            getPlayers(),
+                            getBoardGames(),
+                            getSessions()
+                        ]);
+                }
+            } catch {
+                console.error("Error fetching user data.");
+            }
+            finally {
+                setIsLoading(false);
+            }
+
         }
+        void dataCalls();
+
     }, [user, getPlayers, getBoardGames, getSessions]);
 
     const addPlayer = async (newPlayerName: string): Promise<RequestResult> => {
@@ -247,7 +272,7 @@ export function UserDataProvider({ children }: { children: ReactNode}) {
     }
 
     return (
-        <UserDataContext.Provider value={{boardGames, addBoardGame, removeBoardGame, updateBoardGame, players, addPlayer, removePlayer, updatePlayer, sessions, addSession, removeSession, updateSession}}>
+        <UserDataContext.Provider value={{isLoading, boardGames, addBoardGame, removeBoardGame, updateBoardGame, players, addPlayer, removePlayer, updatePlayer, sessions, addSession, removeSession, updateSession}}>
             {children}
         </UserDataContext.Provider>
     )

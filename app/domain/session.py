@@ -11,5 +11,4 @@ class SessionPlayerData:
 class GameSessionData:
     date: date
     game_id: int
-    user_id: int
     session_players: list [SessionPlayerData]

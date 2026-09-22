@@ -1,4 +1,5 @@
-from sqlalchemy import select, Sequence
+from sqlalchemy import select
+from collections.abc import Sequence
 from sqlalchemy.orm import Session
 from app.models import User, Player, BoardGame, GameSession, SessionPlayer
 from app.custom_exceptions import NotFoundException, UnprocessableException

@@ -1,9 +1,8 @@
-import type {GameSession} from "../../types/GameSession.ts";
+import type {GameSessionResponse} from "../../types/GameSession.ts";
 import IconButton from "../Button/IconButton.tsx";
 
 interface SessionListItemProps {
-    index: number;
-    session: GameSession;
+    session: GameSessionResponse;
     onDelete: () => void;
     onOpenDetails: () => void;
     onEditSession: () => void;
@@ -12,7 +11,7 @@ interface SessionListItemProps {
 function SessionListItem(props: SessionListItemProps){
 
     return (
-        <li className="list-group-item d-flex justify-content-between align-items-center" key={props.index}>
+        <li className="list-group-item d-flex justify-content-between align-items-center">
             <span>{new Date(props.session.date).toLocaleDateString()}</span>
             <span>{props.session.gameName}</span>
             <div className="d-flex gap-2">
