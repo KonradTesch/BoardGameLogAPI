@@ -1,23 +1,12 @@
-from fastapi import APIRouter, HTTPException, status, Depends
-from sqlalchemy.orm import Session
-from fastapi.responses import JSONResponse
-from .index_router import check_user
+from fastapi import APIRouter, HTTPException, status
 from app.custom_exceptions import UnprocessableException, NotFoundException
-from .user_router import user_dependency
-from app.database import get_db
-from app.repositories.board_game_repository import BoardGameRepository
-from typing import Annotated
+from .dependencies import check_user, user_dependency, board_game_repo_dependency
 from app.schemas.board_game import BoardGameResponse, AddBoardGameRequest, EditBoardGameRequest
 
 router = APIRouter(
     prefix="/user/{user_id}/board-games",
     tags=["board-games"]
 )
-
-def get_board_game_repo(db: Session = Depends(get_db)):  # get_db bekannt durch Import
-    return BoardGameRepository(db)
-
-board_game_repo_dependency = Annotated[BoardGameRepository, Depends(get_board_game_repo)]
 
 @router.post("/", response_model=BoardGameResponse, status_code=status.HTTP_201_CREATED)
 def create_board_game(user_id: int, current_user:user_dependency, board_game: AddBoardGameRequest, repo: board_game_repo_dependency):

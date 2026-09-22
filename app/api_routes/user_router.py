@@ -1,15 +1,9 @@
-from fastapi import APIRouter, Request, Depends, status, HTTPException, Cookie
-from fastapi.templating import Jinja2Templates
+from fastapi import APIRouter, Depends, status, HTTPException
 from fastapi.responses import JSONResponse, Response
-from typing import Annotated
-from datetime import datetime
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app.repositories.user_repository import UserRepository
-from app.repositories.game_session_repository import GameSessionRepository
-from app.service.auth_logic import get_current_user
 from app.service.stats_calculator import get_game_stats
-from .index_router import check_user
+from .dependencies import check_user, user_dependency, user_repo_dependency
 from app.custom_exceptions import UnauthorizedException, NotFoundException
 from app.schemas.user import PasswordChangeRequest, ChangeUsernameRequest
 
@@ -18,44 +12,15 @@ router = APIRouter(
     tags=["user"]
 )
 
-templates = Jinja2Templates(directory="templates")
-
-def get_user(access_token: str = Cookie(None)):
-    try:
-        return get_current_user(access_token)
-
-    except UnauthorizedException as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail=str(e))
-
-user_dependency = Annotated[dict, Depends(get_user)]
-
-def get_user_repo(db: Session = Depends(get_db)):
-    return UserRepository(db)
-
-user_repo_dependency = Annotated[UserRepository, Depends(get_user_repo)]
-
-def get_game_session_repo(db: Session = Depends(get_db)):
-    return GameSessionRepository(db)
-
-game_session_repo_dependency = Annotated[GameSessionRepository, Depends(get_game_session_repo)]
-
-def formatted_date(date_string):
-    if isinstance(date_string, str):
-        date_obj = datetime.strptime(date_string, '%Y-%m-%d')
-    else:
-        date_obj = date_string
-    return date_obj.strftime('%d.%m.%Y')
-
 
 @router.patch("/{user_id}/username")
-def change_username(user_id: int, body: ChangeUsernameRequest, current_user: user_dependency, user_repo: user_repo_dependency):
+def change_username(user_id: int, change_username_data: ChangeUsernameRequest, current_user: user_dependency, user_repo: user_repo_dependency):
     check_user(user_id, current_user)
-    new_username = body.get("new_username")
-    user_repo.update_username(user_id, body["new_username"])
+    user_repo.update_username(user_id, change_username_data.new_username)
     return JSONResponse( status_code=status.HTTP_200_OK,
         content={
             "message": "Username successfully updated",
-            "name": new_username,
+            "name": change_username_data.new_username,
             "id": user_id,
     })
 
@@ -105,18 +70,10 @@ def delete_account(user_id: int, current_user: user_dependency, user_repo: user_
 
 
 @router.get("/{user_id}/boardgames/stats")
-def user_all_board_game_stats(user_id: int, request: Request, current_user: user_dependency, db: Session = Depends(get_db)):
+def user_all_board_game_stats(user_id: int, current_user: user_dependency, db: Session = Depends(get_db)):
     check_user(user_id, current_user)
 
-    game_stats = get_game_stats(db, user_id)
-
-    context = {
-        "request": request,
-        "user": current_user,
-        "game_stats": game_stats,
-    }
-
-    return templates.TemplateResponse("game_stats.html", context=context)
+    return get_game_stats(db, user_id)
 
 
 @router.post("/{user_id}/logout")

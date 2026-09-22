@@ -1,15 +1,10 @@
-from typing import Any, Annotated
-from fastapi import APIRouter, Depends, Response, HTTPException, Cookie, status
+from fastapi import APIRouter, Depends, Response, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
-from pydantic import BaseModel
-from sqlalchemy.orm import Session
 from app.custom_exceptions import UnprocessableException, NotFoundException, UnauthorizedException
-from app.database import get_db
-from app.repositories.user_repository import UserRepository
-from app.service.auth_logic import get_current_user
 from dotenv import load_dotenv
 from os import getenv
 from app.service.auth_logic import create_access_token
+from .dependencies import user_dependency, user_repo_dependency
 from app.schemas.auth import RegisterRequest, AuthUserResponse
 
 router = APIRouter(
@@ -21,19 +16,6 @@ load_dotenv()
 SECRET_KEY = getenv("SECRET_KEY")
 ALGORITHM = getenv("ALGORITHM")
 
-def get_user(access_token: str = Cookie(None)) -> dict[str, Any] :
-    try:
-        return get_current_user(access_token)
-
-    except UnauthorizedException as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,detail=str(e))
-
-user_dependency = Annotated[dict, Depends(get_user)]
-
-def get_user_repo(db: Session = Depends(get_db)):
-    return UserRepository(db)
-
-user_repo_dependency = Annotated[UserRepository, Depends(get_user_repo)]
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
 async def register(body: RegisterRequest, repo: user_repo_dependency):

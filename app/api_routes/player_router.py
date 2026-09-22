@@ -1,24 +1,13 @@
-from fastapi import APIRouter, HTTPException, status, Request, Depends
-from fastapi.responses import JSONResponse
-from starlette.status import HTTP_200_OK, HTTP_422_UNPROCESSABLE_CONTENT
-from sqlalchemy.orm import Session
-from typing import Annotated
-from app.database import get_db
-from app.repositories.player_repository import PlayerRepository
-from .index_router import check_user
+from fastapi import APIRouter, HTTPException, status
+from starlette.status import HTTP_422_UNPROCESSABLE_CONTENT
 from app.custom_exceptions import NotFoundException, UnprocessableException
-from .user_router import user_dependency
+from .dependencies import check_user, user_dependency, player_repo_dependency
 from app.schemas.player import PlayerResponse, PlayerCreate, UpdatePlayerRequest
 
 router = APIRouter(
     prefix="/user/{user_id}/players",
     tags=["players"]
 )
-
-def get_player_repo(db: Session = Depends(get_db)):
-    return PlayerRepository(db)
-
-player_repo_dependency = Annotated[PlayerRepository, Depends(get_player_repo)]
 
 @router.get("/", response_model=list[PlayerResponse], response_model_by_alias=True)
 def get_players(user_id: int, current_user: user_dependency, player_repo: player_repo_dependency):

@@ -4,9 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-BoardGameLogAPI is a board game session tracker with two frontends:
-- **Legacy**: Jinja2 server-rendered HTML templates (still present, being phased out)
-- **Active**: React/TypeScript SPA in `react/boardgame_api/`
+BoardGameLogAPI is a board game session tracker. The frontend is a React/TypeScript SPA in `react/boardgame_api/`. The former Jinja2 server-rendered frontend has been removed — the backend is JSON-only.
 
 The backend is a FastAPI app running on port 8000. The React dev server runs on port 5173 and proxies `/api/*` requests to the FastAPI backend (stripping the `/api` prefix).
 
@@ -58,7 +56,7 @@ app/
 ├── models.py            # SQLAlchemy ORM models (User, Player, BoardGame, GameSession, Session_Player)
 ├── custom_exceptions.py # NotFoundException, UnauthorizedException, UnprocessableException
 ├── api_routes/          # FastAPI routers (thin: parse request, inject repos, return response)
-│   ├── index_router.py        # /login, /register redirects + shared check_user() helper
+│   ├── dependencies.py        # Shared check_user(), get_user/user_dependency, repo factories
 │   ├── auth_router.py         # /auth (register, token/login, user, logout cookie handling)
 │   ├── user_router.py         # /user/{user_id} (account, username, password, delete)
 │   ├── session_router.py      # /user/{user_id}/sessions
@@ -79,15 +77,13 @@ app/
 
 **Repository pattern**: Each repository is a class constructed with a per-request SQLAlchemy `Session` (`def __init__(self, db: Session)`). Repositories own all query/commit logic; routers stay thin. There is no longer a shared module-level session or `db_manager.py`.
 
-**Dependency injection**: `database.get_db()` is a generator dependency that yields a fresh `SessionLocal()` per request and closes it afterward. Each router defines small factory functions (e.g. `get_user_repo(db = Depends(get_db))`) and exposes them as `Annotated[Repository, Depends(...)]` aliases (e.g. `user_repo_dependency`). Routes declare these aliases as parameters to receive a request-scoped repository. This replaces the previous single-threaded shared session and is request-safe.
+**Dependency injection**: `database.get_db()` is a generator dependency that yields a fresh `SessionLocal()` per request and closes it afterward. `api_routes/dependencies.py` defines one factory per repository (e.g. `get_user_repo(db = Depends(get_db))`) and exposes each as an `Annotated[Repository, Depends(...)]` alias (`user_repo_dependency`, `player_repo_dependency`, `board_game_repo_dependency`, `game_session_repo_dependency`). Routers import the alias they need and declare it as a route parameter to receive a request-scoped repository. This replaces the previous single-threaded shared session and is request-safe.
 
-**Auth flow**: JWT is stored as an `httponly` cookie (`access_token`). Each protected route injects `user_dependency` (defined per-router via `Depends(get_user)`), which decodes the cookie via `get_current_user()` and returns `{"name": str, "id": int}`. Routers call the shared `check_user(user_id, current_user)` helper (in `index_router.py`) to enforce that the path `user_id` matches the authenticated user, raising 403 otherwise.
+**Auth flow**: JWT is stored as an `httponly` cookie (`access_token`). Each protected route injects `user_dependency` (defined once in `api_routes/dependencies.py` via `Depends(get_user)`), which decodes the cookie via `get_current_user()` and returns `{"name": str, "id": int}`. Routers call the shared `check_user(user_id, current_user)` helper (same module) to enforce that the path `user_id` matches the authenticated user, raising 403 otherwise.
 
 **Schemas / API contract**: `schemas/base.py` defines `RequestModel` and `ResponseModel`, both using `alias_generator=to_camel` + `populate_by_name`. `ResponseModel` also sets `from_attributes=True` so ORM objects serialize directly. **The JSON API is therefore camelCase** (e.g. `boardGameId`, `userId`), while Python/ORM fields stay snake_case. Some response schemas (`schemas/sessions.py`) use `@model_validator(mode="before")` to flatten ORM relationships (e.g. derive `game_name` from `session.game.title`, build `players` from `session_players`).
 
 **Exception handling**: Routers catch the three custom exceptions from `custom_exceptions.py` and re-raise them as `HTTPException` with appropriate status codes.
-
-**Legacy endpoints**: Some routes still render Jinja2 templates (`TemplateResponse`) — e.g. `user_home`, `session_details`, and the stats pages — alongside the JSON endpoints the React SPA consumes. The `templates/` directory and these handlers remain while the legacy frontend is phased out.
 
 ### React frontend (`react/boardgame_api/src/`)
 

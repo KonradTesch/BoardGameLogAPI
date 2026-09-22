@@ -2,7 +2,6 @@ sqlalchemy~=2.0.44
 dotenv~=0.9.9
 psycopg2-binary
 fastapi~=0.121.3
-jinja2
 python-jose[cryptography]~=3.5.0
 passlib[bcrypt]>=1.7.4
 bcrypt==3.2.2

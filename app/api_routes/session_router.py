@@ -1,13 +1,7 @@
-from fastapi import APIRouter, HTTPException, status, Depends
+from fastapi import APIRouter, HTTPException, status
 from starlette.status import HTTP_201_CREATED, HTTP_204_NO_CONTENT
-from sqlalchemy.orm import Session
-from typing import Annotated
-from app.database import get_db
-from app.repositories.game_session_repository import GameSessionRepository
-from app.repositories.user_repository import UserRepository
-from .index_router import check_user
 from app.custom_exceptions import NotFoundException
-from .user_router import user_dependency
+from .dependencies import check_user, user_dependency, game_session_repo_dependency
 from app.schemas.session import GameSessionResponse, GameSessionRequest
 from app.domain.session import GameSessionData, SessionPlayerData
 
@@ -15,16 +9,6 @@ router = APIRouter(
     prefix="/user/{user_id}/sessions",
     tags=["sessions"]
 )
-
-def get_game_session_repo(db: Session = Depends(get_db)):
-    return GameSessionRepository(db)
-
-game_session_repo_dependency = Annotated[GameSessionRepository, Depends(get_game_session_repo)]
-
-def get_user_repo(db: Session = Depends(get_db)):
-    return UserRepository(db)
-
-user_repo_dependency = Annotated[UserRepository, Depends(get_user_repo)]
 
 @router.get("/", response_model=list[GameSessionResponse], response_model_by_alias=True)
 def get_all_sessions_of_user(user_id: int, current_user: user_dependency, game_repo: game_session_repo_dependency):
