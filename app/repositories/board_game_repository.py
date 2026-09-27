@@ -29,7 +29,7 @@ class BoardGameRepository:
         return new_game
 
 
-    def validate_board_game(self, board_game_id:int, user_id:int) -> BoardGame:
+    def get_board_game(self, board_game_id:int, user_id:int) -> BoardGame:
         board_game: Optional[BoardGame] = self.db.scalars(
             select(BoardGame)
             .where(BoardGame.id == board_game_id)
@@ -43,20 +43,24 @@ class BoardGameRepository:
 
 
     def update_board_game_title(self, user_id: int, board_game_id:int, new_title:str) -> None:
-        board_game = self.validate_board_game(board_game_id, user_id)
+        if new_title == "":
+            raise UnprocessableException(f"Board game title is empty.")
+
+        board_game = self.get_board_game(board_game_id, user_id)
+
 
         board_game.title = new_title
 
         self.db.commit()
 
 
-    def delete_board_game(self, board_game_id:int, user_id:int):
-        board_game = self.validate_board_game(board_game_id, user_id)
+    def delete_board_game(self, board_game_id:int, user_id:int) -> None:
+        board_game = self.get_board_game(board_game_id, user_id)
 
         self.db.delete(board_game)
         self.db.commit()
 
-    def get_user_games(self, user_id: int) -> Sequence[BoardGame]:
+    def get_all_games(self, user_id: int) -> Sequence[BoardGame]:
         user_games = self.db.scalars(
             select(BoardGame)
             .where(BoardGame.user_id == user_id)

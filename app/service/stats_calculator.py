@@ -124,7 +124,7 @@ def get_game_stats(db: Session, user_id):
 
     user_game_stats["All Games"] = total
 
-    games = board_game_repo.get_user_games(user_id)
+    games = board_game_repo.get_all_games(user_id)
 
     for game in games:
         game_stats= {}

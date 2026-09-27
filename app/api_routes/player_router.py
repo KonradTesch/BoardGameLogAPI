@@ -13,7 +13,7 @@ router = APIRouter(
 def get_players(user_id: int, current_user: user_dependency, player_repo: player_repo_dependency):
     check_user(user_id, current_user)
 
-    players = player_repo.get_user_players(user_id)
+    players = player_repo.get_all_players(user_id)
 
     return players
 
@@ -42,7 +42,7 @@ def update_player(user_id: int, player_id: int, player_data: UpdatePlayerRequest
     try:
         check_user(user_id, current_user)
 
-        player_repo.update_player(user_id, player_id, player_data.new_title)
+        player_repo.update_player(user_id, player_id, player_data.new_name)
 
     except NotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
@@ -55,6 +55,6 @@ def delete_player(user_id: int, player_id: int, current_user: user_dependency, p
     try:
         check_user(user_id, current_user)
 
-        player_repo.delete_player(player_id)
+        player_repo.delete_player(user_id, player_id)
     except NotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

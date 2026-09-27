@@ -35,7 +35,19 @@ class UserRepository:
         return user
 
     def update_username(self, user_id: int, new_username: str):
+        user_already_exists = self.db.scalars(select(User)
+                                              .where(User.id != user_id)
+                                              .where(User.username == new_username)
+                                              ).first()
+
+        if user_already_exists:
+            raise UnprocessableException(f"Username '{new_username}' already exists")
+
         user = self.db.scalars(select(User).where(User.id == user_id)).first()
+
+        if not user:
+            raise NotFoundException(f"User not found")
+
         user.username = new_username
         self.db.commit()
 

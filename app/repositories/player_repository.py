@@ -1,16 +1,18 @@
-from sqlalchemy import select
 from collections.abc import Sequence
-from sqlalchemy.orm import Session
-from app.models import User, Player, BoardGame, GameSession, SessionPlayer
-from app.custom_exceptions import NotFoundException, UnprocessableException
 from typing import Optional
+
+from sqlalchemy import select
+from sqlalchemy.orm import Session
+
+from app.custom_exceptions import NotFoundException, UnprocessableException
+from app.models import User, Player, BoardGame, GameSession, SessionPlayer
 
 
 class PlayerRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def get_user_players(self, user_id: int) -> Sequence[Player]:
+    def get_all_players(self, user_id: int) -> Sequence[Player]:
         players = self.db.scalars(
             select(Player).where(Player.user_id == user_id)
         ).all()
@@ -18,14 +20,13 @@ class PlayerRepository:
         return players
 
     def create_player(self, user_id: int, player_name: str) -> Player:
-        user = self.db.scalars(select(User).where(User.id == user_id)).first()
+        player_already_exists = self.db.scalars(select(Player)
+                                                .where(Player.user_id == user_id)
+                                                .where(Player.name == player_name)
+                                                ).first()
 
-        if not user:
-            raise NotFoundException("User not found")
-
-        for player in user.players:
-            if player.name == player_name:
-                raise UnprocessableException(f"Player name '{player.name}' already exists")
+        if player_already_exists:
+            raise UnprocessableException(f"Player name '{player_name}' already exists")
 
         new_player = Player(name=player_name, user_id=user_id)
         self.db.add(new_player)
@@ -33,31 +34,34 @@ class PlayerRepository:
 
         return new_player
 
-    def validate_player(self, player_id: int) -> Player:
-        player: Optional[Player] = self.db.scalars(select(Player).where(Player.id == player_id)).first()
+    def get_player(self, user_id, player_id: int) -> Player:
+        player = self.db.scalars(select(Player)
+                                 .where(Player.id == player_id)
+                                 .where(Player.user_id == user_id)
+                                 ).first()
 
         if not player:
             raise NotFoundException("Player not found.")
 
         return player
 
-    def update_player(self, user_id: int, player_id: int, new_name: str):
-        user = self.db.scalars(select(User).where(User.id == user_id)).first()
+    def update_player(self, user_id: int, player_id: int, new_name: str) -> None:
+        player_already_exists = self.db.scalars(select(Player)
+                                                .where(Player.user_id == user_id)
+                                                .where(Player.id != player_id)
+                                                .where(Player.name == new_name)
+                                                ).first()
 
-        if not user:
-            raise NotFoundException("User not found")
+        if player_already_exists:
+            raise UnprocessableException(f"Player name '{new_name}' already exists")
 
-        for player in user.players:
-            if player.id != player_id and player.name == new_name:
-                raise UnprocessableException(f"Player name '{player.name}' already exists")
-
-        player = self.validate_player(player_id)
+        player = self.get_player(user_id,player_id)
 
         player.name = new_name
         self.db.commit()
 
-    def delete_player(self, player_id: int):
-        player_to_delete = self.validate_player(player_id)
+    def delete_player(self, user_id: int, player_id: int) -> None:
+        player_to_delete = self.get_player(user_id, player_id)
 
         session_players = player_to_delete.session_players
 
@@ -67,7 +71,9 @@ class PlayerRepository:
         self.db.delete(player_to_delete)
         self.db.commit()
 
-    def get_player_scores_for_game(self, player_id: int, game_id: int) -> Sequence[SessionPlayer]:
+    def get_player_scores_for_game(self, user_id: int, player_id: int, game_id: int) -> Sequence[SessionPlayer]:
+        self.get_player(user_id, player_id)
+
         player_scores = self.db.scalars(
             select(SessionPlayer)
             .join(SessionPlayer.session)
@@ -77,7 +83,10 @@ class PlayerRepository:
 
         return player_scores
 
-    def get_player_scores_all(self, player_id: int) -> Sequence[SessionPlayer]:
+    def get_player_scores_all(self, user_id: int, player_id: int) -> Sequence[SessionPlayer]:
+
+        self.get_player(user_id, player_id)
+
         player_scores = self.db.scalars(
             select(SessionPlayer)
             .where(SessionPlayer.player_id == player_id)
@@ -85,7 +94,9 @@ class PlayerRepository:
 
         return player_scores
 
-    def get_player_games(self, player_id: int) -> Sequence[BoardGame]:
+    def get_player_games(self, user_id: int, player_id: int) -> Sequence[BoardGame]:
+        self.get_player(user_id, player_id)
+
         player_games = self.db.scalars(
             select(BoardGame)
             .join(GameSession, BoardGame.sessions)
