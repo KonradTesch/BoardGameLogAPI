@@ -22,7 +22,7 @@ def test_create_session_stores_session_with_players(db_session, user, board_game
 
     created = repo.create_session(user.id, session_data)
 
-    stored = repo.validate_session(user.id, created.id)
+    stored = repo.get_session(user.id, created.id)
     assert stored.game_id == board_game.id
     assert stored.date == date(2026, 1, 1)
     results = {sp.player_id: (sp.score, sp.winner) for sp in stored.session_players}
@@ -95,7 +95,7 @@ def test_create_session_reject_future_date(db_session, user, board_game, players
     repo = GameSessionRepository(db_session)
 
     session_data = GameSessionData(
-        date=date.today() + timedelta(days=1),
+        date=date.today() + timedelta(days=2),
         game_id=board_game.id,
         session_players=[
             SessionPlayerData(player_id=players[0].id, score=11, winner=True),
@@ -126,7 +126,7 @@ def test_create_session_failed_creates_no_data(db_session, second_user, user, bo
     with pytest.raises(NotFoundException, match="Player"):
         repo.create_session(user.id, session_data)
 
-    stored = repo.get_user_game_sessions_all(user.id)
+    stored = repo.get_all_sessions(user.id)
 
     assert len(stored) == 0
 
@@ -134,21 +134,21 @@ def test_create_session_failed_creates_no_data(db_session, second_user, user, bo
 def test_get_session_valid(db_session, game_session, user):
     repo = GameSessionRepository(db_session)
 
-    assert repo.validate_session(user.id, game_session.id) == game_session
+    assert repo.get_session(user.id, game_session.id) == game_session
 
 
 def test_get_session_reject_other_user(db_session, game_session, second_user):
     repo = GameSessionRepository(db_session)
 
     with pytest.raises(NotFoundException, match="Game Session"):
-        repo.validate_session(second_user.id, game_session.id)
+        repo.get_session(second_user.id, game_session.id)
 
 
 def test_get_session_reject_unknown_session(db_session, user):
     repo = GameSessionRepository(db_session)
 
     with pytest.raises(NotFoundException, match="Game Session"):
-        repo.validate_session(user.id, -1)
+        repo.get_session(user.id, -1)
 
 
 def test_update_session_game(db_session, game_session, user, players):
@@ -173,7 +173,7 @@ def test_update_session_game(db_session, game_session, user, players):
 
     repo.update_session(user.id, game_session.id, new_session_data)
 
-    stored = repo.validate_session(user.id, game_session.id)
+    stored = repo.get_session(user.id, game_session.id)
 
     assert stored.game_id == new_game.id
 
@@ -194,7 +194,7 @@ def test_update_session_date(db_session, game_session, user, players):
 
     repo.update_session(user.id, game_session.id, new_session_data)
 
-    stored = repo.validate_session(user.id, game_session.id)
+    stored = repo.get_session(user.id, game_session.id)
 
     assert stored.date == new_date
 
@@ -221,7 +221,7 @@ def test_update_session_add_player(db_session, game_session, user, players):
 
     repo.update_session(user.id, game_session.id, new_session_data)
 
-    stored = repo.validate_session(user.id, game_session.id)
+    stored = repo.get_session(user.id, game_session.id)
 
     results = {sp.player_id: (sp.score, sp.winner) for sp in stored.session_players}
     assert results == {
@@ -244,7 +244,7 @@ def test_update_session_remove_player(db_session, game_session, user, players):
 
     repo.update_session(user.id, game_session.id, new_session_data)
 
-    stored = repo.validate_session(user.id, game_session.id)
+    stored = repo.get_session(user.id, game_session.id)
 
     results = {sp.player_id: (sp.score, sp.winner) for sp in stored.session_players}
     assert results == {
@@ -266,7 +266,7 @@ def test_update_session_change_player(db_session, game_session, user, players):
 
     repo.update_session(user.id, game_session.id, new_session_data)
 
-    stored = repo.validate_session(user.id, game_session.id)
+    stored = repo.get_session(user.id, game_session.id)
 
     results = {sp.player_id: (sp.score, sp.winner) for sp in stored.session_players}
     assert results == {
@@ -320,7 +320,7 @@ def test_update_session_reject_other_user_game(db_session, game_session, user, s
 def test_update_session_reject_future_date(db_session, game_session, user, players):
     repo = GameSessionRepository(db_session)
 
-    new_date = date.today() + timedelta(days=1)
+    new_date = date.today() + timedelta(days=2)
 
     new_session_data = GameSessionData(
         date=new_date,
@@ -398,7 +398,7 @@ def test_update_session_failed_update_leaves_session_unchanged(db_session, game_
     with pytest.raises(NotFoundException):
         repo.update_session(user.id, game_session.id, session_data)
 
-    stored = repo.validate_session(user.id, game_session.id)
+    stored = repo.get_session(user.id, game_session.id)
     assert stored.game_id == board_game.id
     assert stored.date == date(2026, 1, 1)
 
@@ -415,7 +415,7 @@ def test_delete_session(db_session, user, game_session, players):
     repo.delete_session(user.id, game_session.id)
 
     with pytest.raises(NotFoundException, match="Game Session"):
-        repo.validate_session(user.id, game_session.id)
+        repo.get_session(user.id, game_session.id)
 
     remaining_session_players = db_session.scalars(
         select(SessionPlayer).where(SessionPlayer.session_id == game_session.id)
@@ -435,7 +435,7 @@ def test_delete_session_reject_other_user(db_session, user, second_user, game_se
     with pytest.raises(NotFoundException, match="Game Session"):
         repo.delete_session(second_user.id, game_session.id)
 
-    assert repo.validate_session(user.id, game_session.id) == game_session
+    assert repo.get_session(user.id, game_session.id) == game_session
 
 
 def test_get_all_sessions_returns_only_own_sessions(db_session, user, second_user, board_game, make_game_session):
@@ -448,7 +448,7 @@ def test_get_all_sessions_returns_only_own_sessions(db_session, user, second_use
     make_game_session(second_user, other_board_game)
     repo = GameSessionRepository(db_session)
 
-    result = repo.get_user_game_sessions_all(user.id)
+    result = repo.get_all_sessions(user.id)
 
     assert {s.id for s in result} == {own_session_1.id, own_session_2.id}
 
@@ -456,7 +456,7 @@ def test_get_all_sessions_returns_only_own_sessions(db_session, user, second_use
 def test_get_all_sessions_user_without_sessions(db_session, second_user):
     repo = GameSessionRepository(db_session)
 
-    result = repo.get_user_game_sessions_all(second_user.id)
+    result = repo.get_all_sessions(second_user.id)
     assert len(result) == 0
 
 
@@ -473,6 +473,6 @@ def test_get_user_game_sessions_by_game(db_session, user, second_user, board_gam
 
     repo = GameSessionRepository(db_session)
 
-    result = repo.get_user_game_session_by_game(user.id, board_game.id)
+    result = repo.get_sessions_by_game(user.id, board_game.id)
 
     assert {s.id for s in result} == {own_session_1.id, own_session_2.id}

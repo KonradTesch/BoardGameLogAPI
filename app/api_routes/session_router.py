@@ -14,7 +14,7 @@ router = APIRouter(
 def get_all_sessions_of_user(user_id: int, current_user: user_dependency, game_repo: game_session_repo_dependency):
     check_user(user_id, current_user)
 
-    sessions = game_repo.get_user_game_sessions_all(user_id)
+    sessions = game_repo.get_all_sessions(user_id)
 
     return sessions
 

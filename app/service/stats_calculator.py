@@ -95,7 +95,7 @@ def get_player_stats(db: Session, player_id):
 
 
 def get_games(game_session_repo, user_id, game_id):
-    game_sessions = game_session_repo.get_user_game_session_by_game(user_id, game_id)
+    game_sessions = game_session_repo.get_sessions_by_game(user_id, game_id)
 
     best_score = game_sessions[0].session_players[0].score
     best_player = game_sessions[0].session_players[0].player.name
@@ -118,7 +118,7 @@ def get_game_stats(db: Session, user_id):
 
     total = {}
 
-    total_sessions = game_session_repo.get_user_game_sessions_all(user_id)
+    total_sessions = game_session_repo.get_all_sessions(user_id)
 
     total["session_count"] = len(total_sessions)
 
@@ -129,7 +129,7 @@ def get_game_stats(db: Session, user_id):
     for game in games:
         game_stats= {}
 
-        game_sessions = game_session_repo.get_user_game_session_by_game(user_id, game.id)
+        game_sessions = game_session_repo.get_sessions_by_game(user_id, game.id)
 
         game_stats["session_count"], game_stats["best_score"], game_stats["best_player"] = get_games(game_session_repo, user_id, game.id)
 
