@@ -45,29 +45,6 @@ class GameSessionRepository:
 
         return game_session
 
-    def _validate_player(self, user_id: int, player_id: int) -> Player:
-        player = self.db.scalars(select(Player)
-                                 .where(Player.id == player_id)
-                                 .where(Player.user_id == user_id)
-                                 ).first()
-
-        if not player:
-            raise NotFoundException(f"Player {player_id} not found")
-
-        return player
-
-    def _validate_board_game(self, user_id: int, board_game_id: int) -> BoardGame:
-        board_game = self.db.scalars(select(BoardGame)
-                                           .where(BoardGame.id == board_game_id)
-                                           .where(BoardGame.user_id == user_id)
-                                           ).first()
-
-        if not board_game:
-            raise NotFoundException(f"Board game {board_game_id} not found")
-
-        return board_game
-
-
     def update_session(self, user_id: int, session_id: int, session_data: GameSessionData) -> GameSession:
         game_session = self.validate_session(user_id, session_id)
 
@@ -134,3 +111,25 @@ class GameSessionRepository:
         ).all()
 
         return game_sessions
+
+    def _validate_player(self, user_id: int, player_id: int) -> Player:
+        player = self.db.scalars(select(Player)
+                                 .where(Player.id == player_id)
+                                 .where(Player.user_id == user_id)
+                                 ).first()
+
+        if not player:
+            raise NotFoundException(f"Player {player_id} not found")
+
+        return player
+
+    def _validate_board_game(self, user_id: int, board_game_id: int) -> BoardGame:
+        board_game = self.db.scalars(select(BoardGame)
+                                           .where(BoardGame.id == board_game_id)
+                                           .where(BoardGame.user_id == user_id)
+                                           ).first()
+
+        if not board_game:
+            raise NotFoundException(f"Board game {board_game_id} not found")
+
+        return board_game
