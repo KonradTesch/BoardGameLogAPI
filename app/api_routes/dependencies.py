@@ -26,10 +26,11 @@ def get_user(access_token: str = Cookie(None)) -> dict[str, Any]:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
 
 user_dependency = Annotated[dict, Depends(get_user)]
+db_dependency = Annotated[Session, Depends(get_db)]
 
 
 def get_user_repo(db: Session = Depends(get_db)):
-    return UserRepository(db, user_id)
+    return UserRepository(db)
 
 user_repo_dependency = Annotated[UserRepository, Depends(get_user_repo)]
 
@@ -39,15 +40,13 @@ def get_player_repo(db: Session = Depends(get_db)):
 
 player_repo_dependency = Annotated[PlayerRepository, Depends(get_player_repo)]
 
-db_dependency = Annotated[Session, Depends(get_db)]
-
 def get_board_game_repo(db: db_dependency, current_user: user_dependency):
     return BoardGameRepository(db, current_user["id"])
 
 board_game_repo_dependency = Annotated[BoardGameRepository, Depends(get_board_game_repo)]
 
 
-def get_game_session_repo(db: Session = Depends(get_db)):
-    return GameSessionRepository(db)
+def get_game_session_repo(db: db_dependency, current_user: user_dependency):
+    return GameSessionRepository(db, current_user["id"])
 
 game_session_repo_dependency = Annotated[GameSessionRepository, Depends(get_game_session_repo)]

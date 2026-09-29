@@ -14,7 +14,7 @@ router = APIRouter(
 def get_all_sessions_of_user(user_id: int, current_user: user_dependency, game_repo: game_session_repo_dependency):
     check_user(user_id, current_user)
 
-    sessions = game_repo.get_all_sessions(user_id)
+    sessions = game_repo.get_all_sessions()
 
     return sessions
 
@@ -34,7 +34,7 @@ def create_session(user_id: int, session: GameSessionRequest, current_user: user
             ) for player in session.session_players]
         )
 
-        new_session = game_session_repo.create_session(user_id, new_session_data)
+        new_session = game_session_repo.create_session(new_session_data)
         return new_session
 
     except NotFoundException as e:
@@ -58,7 +58,7 @@ def update_session(user_id: int, session_id: int, session: GameSessionRequest, c
     )
 
     try:
-        updated_session = game_repo.update_session(user_id, session_id, session_data)
+        updated_session = game_repo.update_session(session_id, session_data)
         return updated_session
 
     except NotFoundException as e:
@@ -70,6 +70,6 @@ def delete_session(user_id: int, session_id: int, current_user: user_dependency,
     try:
         check_user(user_id, current_user)
 
-        game_repo.delete_session(user_id, session_id)
+        game_repo.delete_session(session_id)
     except NotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

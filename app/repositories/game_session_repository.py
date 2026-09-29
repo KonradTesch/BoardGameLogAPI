@@ -21,18 +21,22 @@ def _validate_date(date_to_check: date) -> None:
 
 
 class GameSessionRepository:
-    def __init__(self, db: Session):
+    def __init__(self, db: Session, user_id: int):
         self.db = db
+        self.user_id = user_id
 
-    def create_session(self, user_id: int, session_data: GameSessionData) -> GameSession:
+    def _own_game_sessions(self):
+        return select(GameSession).where(GameSession.user_id == self.user_id)
+
+    def create_session(self, session_data: GameSessionData) -> GameSession:
         """
         Creates a new game session
         """
-        self._validate_session_data(user_id, session_data)
+        self._validate_session_data(session_data)
 
         new_session = GameSession(
             game_id=session_data.game_id,
-            user_id=user_id,
+            user_id=self.user_id,
             date=session_data.date,
             session_players=[
                 SessionPlayer(player_id=sp.player_id, score=sp.score, winner=sp.winner)
@@ -45,26 +49,26 @@ class GameSessionRepository:
 
         return new_session
 
-    def get_session(self, user_id: int, session_id: int) -> GameSession:
+    def get_session(self, session_id: int) -> GameSession:
         """
         Gets the game session with the given id.
         """
-        game_session = self.db.scalars(select(GameSession)
+        game_session = self.db.scalars(self._own_game_sessions()
                                        .where(GameSession.id == session_id)
-                                       .where(GameSession.user_id == user_id)).first()
+                                       ).first()
 
         if not game_session:
             raise NotFoundException(f"Game Session {session_id} not found")
 
         return game_session
 
-    def update_session(self, user_id: int, session_id: int, session_data: GameSessionData) -> GameSession:
+    def update_session(self, session_id: int, session_data: GameSessionData) -> GameSession:
         """
         Updates an existing game session
         """
-        game_session = self.get_session(user_id, session_id)
+        game_session = self.get_session(session_id)
 
-        self._validate_session_data(user_id, session_data)
+        self._validate_session_data(session_data)
 
         game_session.game_id = session_data.game_id
         game_session.date = session_data.date
@@ -93,38 +97,36 @@ class GameSessionRepository:
 
         return game_session
 
-    def delete_session(self, user_id: int, session_id: int) -> None:
+    def delete_session(self, session_id: int) -> None:
         """
         Deletes an existing game session with the given id.
         """
-        session_to_delete = self.get_session(user_id, session_id)
+        session_to_delete = self.get_session(session_id)
         self.db.delete(session_to_delete)
         self.db.commit()
 
-    def get_sessions_by_game(self, user_id: int, game_id: int) -> Sequence[GameSession]:
+    def get_sessions_by_game(self, game_id: int) -> Sequence[GameSession]:
         """
         Gets all game_sessions with the given game from the given user.
         """
         game_sessions = self.db.scalars(
-            select(GameSession)
+            self._own_game_sessions()
             .where(GameSession.game_id == game_id)
-            .where(GameSession.user_id == user_id)
         ).all()
 
         return game_sessions
 
-    def get_all_sessions(self, user_id: int) -> Sequence[GameSession]:
+    def get_all_sessions(self) -> Sequence[GameSession]:
         """
         Gets all game sessions of the given user.
         """
         game_sessions = self.db.scalars(
-            select(GameSession)
-            .where(GameSession.user_id == user_id)
+            self._own_game_sessions()
         ).all()
 
         return game_sessions
 
-    def _validate_session_data(self, user_id: int, session_data: GameSessionData) -> None:
+    def _validate_session_data(self, session_data: GameSessionData) -> None:
         """
         Validates if the given session data is valid.
         """
@@ -135,16 +137,16 @@ class GameSessionRepository:
         if len(set(player_ids)) != len(player_ids):
             raise UnprocessableException("Sessions can't have duplicate players.")
 
-        self._validate_players(user_id, player_ids)
+        self._validate_players(player_ids)
 
-        self._validate_board_game(user_id, session_data.game_id)
+        self._validate_board_game(session_data.game_id)
 
-    def _validate_players(self, user_id: int, player_ids: Sequence[int]) -> None:
+    def _validate_players(self, player_ids: Sequence[int]) -> None:
         """
         Validates if the given players are existing and from the given user.
         """
         found_ids = self.db.scalars(select(Player.id)
-                                    .where(Player.user_id == user_id)
+                                    .where(Player.user_id == self.user_id)
                                     .where(Player.id.in_(player_ids))
                                     ).all()
 
@@ -154,13 +156,13 @@ class GameSessionRepository:
             missing_string = ", ".join(str(i) for i in sorted(missing_ids))
             raise NotFoundException(f"Player not found: {missing_string}")
 
-    def _validate_board_game(self, user_id: int, board_game_id: int) -> BoardGame:
+    def _validate_board_game(self, board_game_id: int) -> BoardGame:
         """
         Validates if the given board game id is existing and from the given user.
         """
         board_game = self.db.scalars(select(BoardGame)
                                      .where(BoardGame.id == board_game_id)
-                                     .where(BoardGame.user_id == user_id)
+                                     .where(BoardGame.user_id == self.user_id)
                                      ).first()
 
         if not board_game:
