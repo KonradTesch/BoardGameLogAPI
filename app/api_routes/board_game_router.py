@@ -13,7 +13,7 @@ def create_board_game(user_id: int, current_user:user_dependency, board_game: Ad
     try:
         check_user(user_id, current_user)
 
-        new_board_game = repo.create_board_game(board_game.title, user_id)
+        new_board_game = repo.create_board_game(board_game.title)
 
         return new_board_game
 
@@ -33,7 +33,7 @@ def delete_board_game(user_id: int, board_game_id: int , current_user:user_depen
     try:
         check_user(user_id, current_user)
 
-        repo.delete_board_game(board_game_id, user_id)
+        repo.delete_board_game(board_game_id)
 
     except NotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
@@ -43,7 +43,7 @@ def update_board_game(user_id: int, board_game_id: int, current_user:user_depend
     try:
         check_user(user_id, current_user)
 
-        repo.update_board_game_title(user_id, board_game_id, board_game_data.new_title)
+        repo.update_board_game_title(board_game_id, board_game_data.new_title)
 
     except NotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

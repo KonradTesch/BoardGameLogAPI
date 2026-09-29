@@ -32,10 +32,10 @@ def test_create_session_stores_session_with_players(db_session, user, board_game
     }
 
 
-def test_create_session_reject_other_user_game(db_session, user, second_user, players):
+def test_create_session_reject_other_user_game(db_session, user, other_user, players):
     repo = GameSessionRepository(db_session)
 
-    board_game = BoardGame(title="Catan", user_id=second_user.id)
+    board_game = BoardGame(title="Catan", user_id=other_user.id)
 
     db_session.add(board_game)
     db_session.flush()
@@ -53,10 +53,10 @@ def test_create_session_reject_other_user_game(db_session, user, second_user, pl
         repo.create_session(user.id, session_data)
 
 
-def test_create_session_reject_other_user_player(db_session, user, second_user, board_game, players):
+def test_create_session_reject_other_user_player(db_session, user, other_user, board_game, players):
     repo = GameSessionRepository(db_session)
 
-    other_player = Player(name="Henry", user_id=second_user.id)
+    other_player = Player(name="Henry", user_id=other_user.id)
 
     db_session.add(other_player)
     db_session.flush()
@@ -107,10 +107,10 @@ def test_create_session_reject_future_date(db_session, user, board_game, players
         repo.create_session(user.id, session_data)
 
 
-def test_create_session_failed_creates_no_data(db_session, second_user, user, board_game):
+def test_create_session_failed_creates_no_data(db_session, other_user, user, board_game):
     repo = GameSessionRepository(db_session)
 
-    foreign_player = Player(user_id=second_user.id, name="Tom")
+    foreign_player = Player(user_id=other_user.id, name="Tom")
 
     db_session.add(foreign_player)
     db_session.commit()
@@ -137,11 +137,11 @@ def test_get_session_valid(db_session, game_session, user):
     assert repo.get_session(user.id, game_session.id) == game_session
 
 
-def test_get_session_reject_other_user(db_session, game_session, second_user):
+def test_get_session_reject_other_user(db_session, game_session, other_user):
     repo = GameSessionRepository(db_session)
 
     with pytest.raises(NotFoundException, match="Game Session"):
-        repo.get_session(second_user.id, game_session.id)
+        repo.get_session(other_user.id, game_session.id)
 
 
 def test_get_session_reject_unknown_session(db_session, user):
@@ -275,7 +275,7 @@ def test_update_session_change_player(db_session, game_session, user, players):
     }
 
 
-def test_update_session_reject_other_user(db_session, game_session, user, second_user, players):
+def test_update_session_reject_other_user(db_session, game_session, user, other_user, players):
     repo = GameSessionRepository(db_session)
 
     new_date = date(2026, 1, 2)
@@ -290,14 +290,14 @@ def test_update_session_reject_other_user(db_session, game_session, user, second
     )
 
     with pytest.raises(NotFoundException, match="Game Session"):
-        repo.update_session(second_user.id, game_session.id, new_session_data)
+        repo.update_session(other_user.id, game_session.id, new_session_data)
 
 
-def test_update_session_reject_other_user_game(db_session, game_session, user, second_user, players):
+def test_update_session_reject_other_user_game(db_session, game_session, user, other_user, players):
     repo = GameSessionRepository(db_session)
 
     new_game = BoardGame(
-        user_id=second_user.id,
+        user_id=other_user.id,
         title="Risiko",
     )
 
@@ -335,11 +335,11 @@ def test_update_session_reject_future_date(db_session, game_session, user, playe
         repo.update_session(user.id, game_session.id, new_session_data)
 
 
-def test_update_session_reject_other_user_player(db_session, game_session, user, second_user, players):
+def test_update_session_reject_other_user_player(db_session, game_session, user, other_user, players):
     repo = GameSessionRepository(db_session)
 
     new_player = Player(
-        user_id=second_user.id,
+        user_id=other_user.id,
         name="Tom",
     )
     db_session.add(new_player)
@@ -376,12 +376,12 @@ def test_update_session_reject_duplicate_players(db_session, game_session, user,
         repo.update_session(user.id, game_session.id, new_session_data)
 
 
-def test_update_session_failed_update_leaves_session_unchanged(db_session, game_session, user, second_user, board_game,
+def test_update_session_failed_update_leaves_session_unchanged(db_session, game_session, user, other_user, board_game,
                                                                players):
     repo = GameSessionRepository(db_session)
 
     new_game = BoardGame(user_id=user.id, title="Risiko")
-    foreign_player = Player(user_id=second_user.id, name="Tom")
+    foreign_player = Player(user_id=other_user.id, name="Tom")
 
     db_session.add_all([new_game, foreign_player])
     db_session.commit()
@@ -429,23 +429,23 @@ def test_delete_session(db_session, user, game_session, players):
     assert remaining_ids == player_ids
 
 
-def test_delete_session_reject_other_user(db_session, user, second_user, game_session):
+def test_delete_session_reject_other_user(db_session, user, other_user, game_session):
     repo = GameSessionRepository(db_session)
 
     with pytest.raises(NotFoundException, match="Game Session"):
-        repo.delete_session(second_user.id, game_session.id)
+        repo.delete_session(other_user.id, game_session.id)
 
     assert repo.get_session(user.id, game_session.id) == game_session
 
 
-def test_get_all_sessions_returns_only_own_sessions(db_session, user, second_user, board_game, make_game_session):
-    other_board_game = BoardGame(title="Azul", user_id=second_user.id)
+def test_get_all_sessions_returns_only_own_sessions(db_session, user, other_user, board_game, make_game_session):
+    other_board_game = BoardGame(title="Azul", user_id=other_user.id)
     db_session.add(other_board_game)
     db_session.commit()
 
     own_session_1 = make_game_session(user, board_game)
     own_session_2 = make_game_session(user, board_game)
-    make_game_session(second_user, other_board_game)
+    make_game_session(other_user, other_board_game)
     repo = GameSessionRepository(db_session)
 
     result = repo.get_all_sessions(user.id)
@@ -453,14 +453,14 @@ def test_get_all_sessions_returns_only_own_sessions(db_session, user, second_use
     assert {s.id for s in result} == {own_session_1.id, own_session_2.id}
 
 
-def test_get_all_sessions_user_without_sessions(db_session, second_user):
+def test_get_all_sessions_user_without_sessions(db_session, other_user):
     repo = GameSessionRepository(db_session)
 
-    result = repo.get_all_sessions(second_user.id)
+    result = repo.get_all_sessions(other_user.id)
     assert len(result) == 0
 
 
-def test_get_user_game_sessions_by_game(db_session, user, second_user, board_game, make_game_session):
+def test_get_user_game_sessions_by_game(db_session, user, other_user, board_game, make_game_session):
     other_board_game = BoardGame(title="Azul", user_id=user.id)
     db_session.add(other_board_game)
     db_session.commit()
@@ -469,7 +469,7 @@ def test_get_user_game_sessions_by_game(db_session, user, second_user, board_gam
     own_session_2 = make_game_session(user, board_game)
 
     make_game_session(user, other_board_game)
-    make_game_session(second_user, board_game)
+    make_game_session(other_user, board_game)
 
     repo = GameSessionRepository(db_session)
 

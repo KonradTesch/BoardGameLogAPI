@@ -55,11 +55,11 @@ def test_update_username(db_session, user):
     assert stored.username == "Lisa"
 
 
-def test_update_username_reject_duplicate_username(db_session, user, second_user):
+def test_update_username_reject_duplicate_username(db_session, user, other_user):
     repo = UserRepository(db_session)
 
     with pytest.raises(UnprocessableException, match="already exists"):
-        repo.update_username(user.id, second_user.username)
+        repo.update_username(user.id, other_user.username)
 
     stored = repo.get_user_by_id(user.id)
     assert stored.username == "Max"
@@ -144,12 +144,12 @@ def test_get_user_by_id_reject_unknown_user(db_session):
         repo.get_user_by_id(-1)
 
 
-def test_get_all_users(db_session, user, second_user):
+def test_get_all_users(db_session, user, other_user):
     repo = UserRepository(db_session)
 
     result = repo.get_all_users()
 
-    assert {u.id for u in result} == {user.id, second_user.id}
+    assert {u.id for u in result} == {user.id, other_user.id}
 
 
 def test_get_all_users_without_users(db_session):

@@ -35,7 +35,7 @@ def user(db_session):
 
 
 @pytest.fixture
-def second_user(db_session):
+def other_user(db_session):
     user = User(username="Moritz", hashed_password="something")
     db_session.add(user)
     db_session.commit()

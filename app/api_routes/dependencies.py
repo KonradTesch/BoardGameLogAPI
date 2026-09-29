@@ -29,7 +29,7 @@ user_dependency = Annotated[dict, Depends(get_user)]
 
 
 def get_user_repo(db: Session = Depends(get_db)):
-    return UserRepository(db)
+    return UserRepository(db, user_id)
 
 user_repo_dependency = Annotated[UserRepository, Depends(get_user_repo)]
 
@@ -39,9 +39,10 @@ def get_player_repo(db: Session = Depends(get_db)):
 
 player_repo_dependency = Annotated[PlayerRepository, Depends(get_player_repo)]
 
+db_dependency = Annotated[Session, Depends(get_db)]
 
-def get_board_game_repo(db: Session = Depends(get_db)):
-    return BoardGameRepository(db)
+def get_board_game_repo(db: db_dependency, current_user: user_dependency):
+    return BoardGameRepository(db, current_user["id"])
 
 board_game_repo_dependency = Annotated[BoardGameRepository, Depends(get_board_game_repo)]
 
