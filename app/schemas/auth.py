@@ -1,9 +1,9 @@
 from .base import RequestModel, ResponseModel
 
 class RegisterRequest(RequestModel):
-    name: str
+    username: str
     password: str
 
 class AuthUserResponse(ResponseModel):
     id: int
-    name: str
+    username: str

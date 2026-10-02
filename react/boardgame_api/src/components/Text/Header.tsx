@@ -2,7 +2,7 @@ import { useState, useEffect, useContext} from "react";
 import {AuthContext} from "../../context/AuthContext.tsx";
 import NavDropdown from "../Dropdowns/NavDropdown.tsx";
 import Button from "../Button/Button.tsx";
-import {useNavigate} from "react-router-dom";
+import {Link, useNavigate} from "react-router-dom";
 import {ROUTES} from "../../types/routes.ts";
 
 function Header() {
@@ -21,14 +21,22 @@ function Header() {
     }, [isDark]);
 
     const handleLogout = async () => {
-        const response = await fetch(`/api/user/${user?.id}/logout`, {
-            method: "POST",
-            credentials: "include"
-        });
+        try {
+            const response = await fetch(`/api/auth/logout`, {
+                method: "POST",
+                credentials: "include"
+            });
 
-        if (response.ok) {
-            setUser(null)
-            navigate(ROUTES.login.to)
+            if (response.ok) {
+                setUser(null)
+                navigate(ROUTES.login.to)
+            } else {
+                console.error(`Error: Logout doesn't work. (${response.status})`)
+                //TODO: show Error Message (as Toast)
+            }
+        }
+        catch {
+            console.error("Error: The server is not responding.")
         }
     }
 
@@ -41,8 +49,8 @@ function Header() {
                     </a>
                     <div className="d-flex align-items-center gap-4">
                         {user && <NavDropdown user={user} dropdownOptions={[
-                            <a className="dropdown-item" href={`/user/${user.id}/dashboard`}>Dashboard</a>,
-                            <a className="dropdown-item" href={`/user/${user.id}/settings`}>Account Settings</a>,
+                            <Link className="dropdown-item" to={ROUTES.dashboard.to(user.id)}>Dashboard</Link>,
+                            <Link className="dropdown-item" to={ROUTES.accountSettings.to(user.id)}>Account Settings</Link>,
                             <div className="dropdown-item">
                                 <Button label="Logout" onClick={handleLogout}/>
                             </div>

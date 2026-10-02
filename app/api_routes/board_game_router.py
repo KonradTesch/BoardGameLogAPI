@@ -24,7 +24,7 @@ def create_board_game(user_id: int, current_user:user_dependency, board_game: Ad
 @router.get("/", response_model=list[BoardGameResponse], response_model_by_alias=True)
 def get_board_games(user_id: int, current_user: user_dependency, repo: board_game_repo_dependency):
     check_user(user_id, current_user)
-    board_games = repo.get_all_games(user_id)
+    board_games = repo.get_all_games()
 
     return board_games
 

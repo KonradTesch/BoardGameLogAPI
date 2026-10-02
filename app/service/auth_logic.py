@@ -1,30 +1,39 @@
-from typing import Any
-from fastapi import Cookie
-from jose import jwt, JWTError
-from dotenv import load_dotenv
-from os import getenv
+from dataclasses import dataclass
+from datetime import datetime, timedelta, timezone
 
+from jose import jwt, JWTError
+
+from app.config import settings
 from app.custom_exceptions import UnauthorizedException
 
-load_dotenv()
-SECRET_KEY = getenv("SECRET_KEY")
-ALGORITHM = getenv("ALGORITHM")
 
-def create_access_token(username: str, user_id: int):
-    encode = {'sub': username, 'id': user_id}
-    return jwt.encode(encode, SECRET_KEY, algorithm=ALGORITHM)
+@dataclass(frozen=True)
+class TokenPayload:
+    user_id: int
+    token_version: int
+    issued_at: datetime
 
-def get_current_user(access_token: str = Cookie(None)) -> dict[str, Any]:
-    if not access_token:
-        raise UnauthorizedException("Missing access token")
+def create_access_token(user_id: int, token_version: int):
+    now = datetime.now(timezone.utc)
 
+    encode = {
+        'sub': str(user_id),
+        'ver': token_version,
+        'iat': now,
+        'exp': now + timedelta(days=settings.access_token_expire_days)
+
+    }
+    return jwt.encode(encode, settings.secret_key, algorithm=settings.algorithm)
+
+def decode_access_token(token: str | None) -> TokenPayload:
+    if not token:
+        raise UnauthorizedException("Missing access token.")
     try:
-        payload = jwt.decode(access_token, SECRET_KEY, algorithms=[ALGORITHM])
-        username: str = payload.get("sub")
-        user_id: int = payload.get("id")
-        if username is None or user_id is None:
-            raise UnauthorizedException("Could not validate user.")
-
-        return {"name": username, "id": user_id}
-    except JWTError:
-        raise UnauthorizedException("Invalid or expired access token")
+        payload = jwt.decode(token, settings.secret_key, algorithms=[settings.algorithm])
+        return TokenPayload(
+            user_id=int(payload["sub"]),
+            token_version=int(payload["ver"]),
+            issued_at=datetime.fromtimestamp(payload["iat"], tz=timezone.utc),
+        )
+    except (JWTError, KeyError, ValueError):
+        raise UnauthorizedException("Invalid or expired access token.")

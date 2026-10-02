@@ -3,6 +3,7 @@ from fastapi.responses import JSONResponse, Response
 from sqlalchemy.orm import Session
 from app.database import get_db
 from app.service.stats_calculator import get_game_stats
+from . import auth_cookie
 from .dependencies import check_user, user_dependency, user_repo_dependency
 from app.custom_exceptions import UnauthorizedException, NotFoundException
 from app.schemas.user import PasswordChangeRequest, ChangeUsernameRequest
@@ -20,7 +21,7 @@ def change_username(user_id: int, change_username_data: ChangeUsernameRequest, c
     return JSONResponse( status_code=status.HTTP_200_OK,
         content={
             "message": "Username successfully updated",
-            "name": change_username_data.new_username,
+            "username": change_username_data.new_username,
             "id": user_id,
     })
 
@@ -61,7 +62,7 @@ def delete_account(user_id: int, current_user: user_dependency, user_repo: user_
                 "message": "Account successfully deleted."
             }
         )
-        response.delete_cookie(key="access_token", httponly=True, secure=False, samesite="lax")
+        auth_cookie.clear_auth_cookie(response)
         return response
     except UnauthorizedException as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
@@ -74,15 +75,3 @@ def user_all_board_game_stats(user_id: int, current_user: user_dependency, db: S
     check_user(user_id, current_user)
 
     return get_game_stats(db, user_id)
-
-
-@router.post("/{user_id}/logout")
-def logout(user_id: int, response: Response, current_user: user_dependency):
-    check_user(user_id, current_user)
-
-    response.delete_cookie(
-        key="access_token",
-        httponly=True,
-        secure=False,
-        samesite="lax"
-    )

@@ -38,7 +38,7 @@ function AccountSettingsPage() {
 
         const data = await response.json();
         if (response.ok) {
-            setUser({id: data.id, name: data.name});
+            setUser({id: data.id, username: data.username});
             setChangeUsernameInfo({message: data.message, variant:"success"})
         }
         else {
@@ -100,7 +100,7 @@ function AccountSettingsPage() {
                 <InputField
                     label="Current Username"
                     type="text"
-                    value={user?.name}
+                    value={user?.username}
                     disabled={true}
                 />
                 <InputField

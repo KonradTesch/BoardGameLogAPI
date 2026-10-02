@@ -40,7 +40,7 @@ function LoginPage() {
         const response = await fetch("/api/auth/register", {
             method: "POST",
             headers: {"Content-Type": "application/json"},
-            body: JSON.stringify({name: username, password: password})
+            body: JSON.stringify({username: username, password: password})
         });
         const data = await response.json();
         if (response.ok) {
@@ -57,7 +57,7 @@ function LoginPage() {
         formData.append("username", username);
         formData.append("password", password);
 
-        const response = await fetch("/api/auth/token", {
+        const response = await fetch("/api/auth/login", {
             method: "POST",
             headers: {"Content-Type": "application/x-www-form-urlencoded"},
             body: formData
@@ -66,7 +66,7 @@ function LoginPage() {
         if (response.ok) {
             setInfoMessage({message: data.message, variant: "success"})
 
-            setUser({id: data.id, name: data.name});
+            setUser({id: data.id, username: data.name});
             navigate(ROUTES.dashboard.to(data.id));
         }
         else {

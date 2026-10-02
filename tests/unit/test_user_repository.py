@@ -1,13 +1,14 @@
 import pytest
 
 from app.custom_exceptions import NotFoundException, UnauthorizedException, UnprocessableException
+from app.domain.auth import RegisterData
 from app.repositories.user_repository import UserRepository
 
 
 def test_create_user_stores_user_with_hashed_password(db_session):
     repo = UserRepository(db_session)
 
-    created = repo.create_user("Lisa", "secret")
+    created = repo.create_user(RegisterData(username="Lisa", password="secret"))
 
     stored = repo.get_user_by_id(created.id)
     assert stored.username == "Lisa"
@@ -18,15 +19,17 @@ def test_create_user_stores_user_with_hashed_password(db_session):
 def test_create_user_reject_duplicate_username(db_session, user):
     repo = UserRepository(db_session)
 
+    register_data = RegisterData(username=user.username, password="secret")
+
     with pytest.raises(UnprocessableException, match="already exists"):
-        repo.create_user(user.username, "secret")
+        repo.create_user(register_data)
 
     assert len(repo.get_all_users()) == 1
 
 
 def test_authenticate_user_valid(db_session):
     repo = UserRepository(db_session)
-    created = repo.create_user("Lisa", "secret")
+    created = repo.create_user(RegisterData(username="Lisa", password="secret"))
 
     assert repo.authenticate_user("Lisa", "secret") == created
 
@@ -34,15 +37,15 @@ def test_authenticate_user_valid(db_session):
 def test_authenticate_user_reject_unknown_username(db_session):
     repo = UserRepository(db_session)
 
-    with pytest.raises(NotFoundException, match="Username"):
+    with pytest.raises(NotFoundException, match="Incorrect username or password"):
         repo.authenticate_user("Unknown", "secret")
 
 
 def test_authenticate_user_reject_wrong_password(db_session):
     repo = UserRepository(db_session)
-    repo.create_user("Lisa", "secret")
+    repo.create_user(RegisterData(username="Lisa", password="secret"))
 
-    with pytest.raises(UnauthorizedException, match="password"):
+    with pytest.raises(NotFoundException, match="Incorrect username or password"):
         repo.authenticate_user("Lisa", "wrong")
 
 
@@ -74,18 +77,18 @@ def test_update_username_reject_unknown_user(db_session):
 
 def test_change_password(db_session):
     repo = UserRepository(db_session)
-    created = repo.create_user("Lisa", "secret")
+    created = repo.create_user(RegisterData(username="Lisa", password="secret"))
 
     repo.change_password(created.id, "secret", "new_secret")
 
     assert repo.authenticate_user("Lisa", "new_secret") == created
-    with pytest.raises(UnauthorizedException):
+    with pytest.raises(NotFoundException):
         repo.authenticate_user("Lisa", "secret")
 
 
 def test_change_password_reject_wrong_old_password(db_session):
     repo = UserRepository(db_session)
-    created = repo.create_user("Lisa", "secret")
+    created = repo.create_user(RegisterData(username="Lisa", password="secret"))
 
     with pytest.raises(UnauthorizedException, match="Old password"):
         repo.change_password(created.id, "wrong", "new_secret")

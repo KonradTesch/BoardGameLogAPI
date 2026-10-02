@@ -1,63 +1,55 @@
 from fastapi import APIRouter, Depends, Response, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from app.custom_exceptions import UnprocessableException, NotFoundException, UnauthorizedException
-from dotenv import load_dotenv
-from os import getenv
 from app.service.auth_logic import create_access_token
+from . import auth_cookie
 from .dependencies import user_dependency, user_repo_dependency
 from app.schemas.auth import RegisterRequest, AuthUserResponse
+from ..domain.auth import RegisterData
 
 router = APIRouter(
     prefix="/auth",
     tags=["auth"]
 )
 
-load_dotenv()
-SECRET_KEY = getenv("SECRET_KEY")
-ALGORITHM = getenv("ALGORITHM")
-
 
 @router.post("/register", status_code=status.HTTP_201_CREATED)
-async def register(body: RegisterRequest, repo: user_repo_dependency):
+async def register(register_request: RegisterRequest, repo: user_repo_dependency):
     try:
-        repo.create_user(body.name, body.password)
+        register_data = RegisterData(username=register_request.username, password=register_request.password)
+
+        repo.create_user(register_data)
         return {
             "message": "Registration successful",
         }
 
     except UnprocessableException as e:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
-    except NotFoundException as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
 @router.get("/user", response_model=AuthUserResponse, status_code=status.HTTP_200_OK)
 async def get_auth_user(current_user: user_dependency):
-        return current_user
+    return current_user
 
-@router.post("/token")
+@router.post("/login")
 async def login_for_access_token(repo: user_repo_dependency, response: Response, form_data: OAuth2PasswordRequestForm = Depends()):
     try:
         user = repo.authenticate_user(form_data.username, form_data.password)
 
-        token = create_access_token(user.username, user.id)
+        token = create_access_token(user.id, 0)
 
-        response.set_cookie(
-            key="access_token",
-            value=token,
-            httponly=True,
-            secure=False,
-            samesite="lax"
-        )
+        auth_cookie.set_auth_cookie(response, token)
 
         return {
             "message": "Login successful.",
             "id": user.id,
-            "name": user.username
+            "username": user.username
         }
     except NotFoundException as e:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail= e.detail)
-    except UnauthorizedException as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail= e.detail)
+
+@router.post("/logout")
+async def logout(response: Response):
+    auth_cookie.clear_auth_cookie(response)
 
 
 

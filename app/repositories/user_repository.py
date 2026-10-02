@@ -1,6 +1,8 @@
 from sqlalchemy import select, Sequence
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
+
+from app.domain.auth import RegisterData
 from app.models import User
 from app.custom_exceptions import NotFoundException, UnauthorizedException, UnprocessableException
 
@@ -11,14 +13,14 @@ class UserRepository:
     def __init__(self, db: Session):
         self.db = db
 
-    def create_user(self, username: str, password: str) -> User:
-        user = self.db.scalars(select(User).where(User.username == username)).first()
+    def create_user(self, register_data: RegisterData) -> User:
+        user = self.db.scalars(select(User).where(User.username == register_data.username)).first()
         if user:
-            raise UnprocessableException(f"Username '{username}' already exists")
+            raise UnprocessableException(f"Username '{register_data.username}' already exists")
 
         new_user = User(
-            username=username,
-            hashed_password=bcrypt_context.hash(password))
+            username=register_data.username,
+            hashed_password=bcrypt_context.hash(register_data.password))
         self.db.add(new_user)
         self.db.commit()
 
@@ -27,10 +29,8 @@ class UserRepository:
     def authenticate_user(self, username: str, password: str) -> User:
         user = self.db.scalars(select(User).where(User.username == username)).first()
 
-        if not user:
-            raise NotFoundException(f"Username '{username}' not found")
-        if not bcrypt_context.verify(password, str(user.hashed_password)):
-            raise UnauthorizedException("Incorrect password")
+        if not user or not bcrypt_context.verify(password, str(user.hashed_password)):
+            raise NotFoundException(f"Incorrect username or password")
 
         return user
 

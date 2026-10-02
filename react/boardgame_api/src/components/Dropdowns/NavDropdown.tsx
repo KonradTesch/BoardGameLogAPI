@@ -10,7 +10,7 @@ function NavDropdown(props: NavDropdownProps) {
     return (
         <li className="nav-item dropdown">
             <button className="nav-link dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
-                {props.user.name}
+                {props.user.username}
             </button>
             <ul className="dropdown-menu dropdown-menu-lg-end">
                 {props.dropdownOptions.map((option, index) => (

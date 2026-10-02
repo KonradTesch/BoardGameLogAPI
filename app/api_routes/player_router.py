@@ -13,7 +13,7 @@ router = APIRouter(
 def get_players(user_id: int, current_user: user_dependency, player_repo: player_repo_dependency):
     check_user(user_id, current_user)
 
-    players = player_repo.get_all_players(user_id)
+    players = player_repo.get_all_players()
 
     return players
 
