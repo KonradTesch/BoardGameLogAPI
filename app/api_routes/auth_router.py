@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, Response, HTTPException, status
 from fastapi.security import OAuth2PasswordRequestForm
 from app.custom_exceptions import UnprocessableException, NotFoundException, UnauthorizedException
-from app.service.auth_logic import create_access_token
+from app.service.auth_logic import create_access_token, needs_renewal
 from . import auth_cookie
-from .dependencies import user_dependency, user_repo_dependency
+from .dependencies import user_dependency, user_repo_dependency, token_payload_dependency
 from app.schemas.auth import RegisterRequest, AuthUserResponse
 from ..domain.auth import RegisterData
 
@@ -27,7 +27,11 @@ async def register(register_request: RegisterRequest, repo: user_repo_dependency
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
 
 @router.get("/user", response_model=AuthUserResponse, status_code=status.HTTP_200_OK)
-async def get_auth_user(current_user: user_dependency):
+async def get_auth_user(current_user: user_dependency, response: Response, payload: token_payload_dependency):
+    if needs_renewal(payload):
+        token = create_access_token(payload.user_id, payload.token_version)
+        auth_cookie.set_auth_cookie(response, token)
+
     return current_user
 
 @router.post("/login")

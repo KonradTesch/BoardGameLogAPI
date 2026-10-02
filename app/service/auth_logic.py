@@ -37,3 +37,8 @@ def decode_access_token(token: str | None) -> TokenPayload:
         )
     except (JWTError, KeyError, ValueError):
         raise UnauthorizedException("Invalid or expired access token.")
+
+def needs_renewal(payload: TokenPayload) -> bool:
+    token_age = datetime.now(timezone.utc) - payload.issued_at
+
+    return token_age > timedelta(hours=settings.token_renew_after_hours)
