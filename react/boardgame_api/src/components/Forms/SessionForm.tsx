@@ -13,12 +13,12 @@ import type {
 } from "../../types/GameSession.ts";
 import PlayerTable from "../PlayerTable.tsx";
 import Button from "../Button/Button.tsx";
-import type { InfoText} from "../../types/InfoText.ts";
 import InformationText from "../Text/InformationText.tsx";
 import {useNavigate} from "react-router-dom";
 import {ROUTES} from "../../types/routes.ts";
 import {AuthContext} from "../../context/AuthContext.tsx";
 import {validateSessionForm} from "../../util/ValidateSessionInput.ts";
+import {useToast} from "../../context/ToastContext.tsx";
 
 interface SessionFormProps {
     initialSession: GameSessionResponse | undefined;
@@ -30,6 +30,7 @@ function SessionForm({ initialSession }: SessionFormProps) {
 
     const { boardGames, players, addSession, updateSession } = useContext(UserDataContext)!;
     const { user } = useContext(AuthContext)!;
+    const { showToast } = useToast();
 
     const isEditMode = initialSession !== undefined;
 
@@ -51,7 +52,6 @@ function SessionForm({ initialSession }: SessionFormProps) {
     );
 
     const [hasSubmitted, setHasSubmitted] = useState(false)
-    const [submitSessionInfo, setSubmitSessionInfo] = useState<InfoText>({message: ""})
 
     const sortedBoardGames = useMemo(
         () => boardGames.toSorted((a, b) => a.title.localeCompare(b.title, undefined, { sensitivity: "base" })),
@@ -97,11 +97,12 @@ function SessionForm({ initialSession }: SessionFormProps) {
             : await addSession((newSession));
 
         if (result.success) {
-            setSubmitSessionInfo({message: result.message, variant: "success"})
+
+            showToast({message: result.message, variant: "success"})
             navigate(ROUTES.dashboard.to(user!.id))
         }
         else {
-            setSubmitSessionInfo({message: result.error, variant: "warning"})
+            showToast({message: result.error, variant: "warning"})
         }
     }
 
@@ -191,7 +192,6 @@ function SessionForm({ initialSession }: SessionFormProps) {
             variant="success"
             onClick={handleSubmitSession}
         />
-        {submitSessionInfo.message && <InformationText infoText={submitSessionInfo} />}
     </PageContainer>
 );
 }
