@@ -34,7 +34,7 @@ async def get_auth_user(current_user: user_dependency, response: Response, paylo
 
     return current_user
 
-@router.post("/login")
+@router.post("/login", response_model=AuthUserResponse, status_code=status.HTTP_200_OK)
 async def login_for_access_token(repo: user_repo_dependency, response: Response, form_data: OAuth2PasswordRequestForm = Depends()):
     try:
         user = repo.authenticate_user(form_data.username, form_data.password)
@@ -43,11 +43,7 @@ async def login_for_access_token(repo: user_repo_dependency, response: Response,
 
         auth_cookie.set_auth_cookie(response, token)
 
-        return {
-            "message": "Login successful.",
-            "id": user.id,
-            "username": user.username
-        }
+        return AuthUserResponse(id=user.id, username=user.username)
     except NotFoundException as e:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail= e.detail)
 

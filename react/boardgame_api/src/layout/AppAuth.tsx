@@ -1,12 +1,8 @@
 import {useContext, useEffect} from "react";
 import {AuthContext} from "../context/AuthContext.tsx";
-import {useLocation, useNavigate} from "react-router-dom";
-import {ROUTES} from "../types/routes.ts";
+import type {User} from "../types/User.ts";
 
 function AppAuth() {
-    const navigate = useNavigate();
-
-    const location = useLocation();
 
     const { setUser, setIsLoading } = useContext(AuthContext)!;
 
@@ -17,16 +13,12 @@ function AppAuth() {
             });
             setIsLoading(false);
             if (response.ok){
-                const data = await response.json();
+                const data: User = await response.json();
                 setUser(data)
-                if (location.pathname === "/login") {
-                    navigate(ROUTES.login.to)
-                }
             }
             else
             {
                 setUser(null);
-                navigate(ROUTES.login.to);
             }
         }
         void auth_user();

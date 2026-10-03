@@ -2,13 +2,11 @@ import { useState, useEffect, useContext} from "react";
 import {AuthContext} from "../context/AuthContext.tsx";
 import NavDropdown from "./Dropdowns/NavDropdown.tsx";
 import Button from "./Button/Button.tsx";
-import {Link, useNavigate} from "react-router-dom";
+import {Link} from "react-router-dom";
 import {ROUTES} from "../types/routes.ts";
 import {useToast} from "../context/ToastContext.tsx";
 
 function Header() {
-    const navigate = useNavigate();
-
     const { user, setUser } = useContext(AuthContext)!;
     const { showToast } = useToast();
 
@@ -31,7 +29,6 @@ function Header() {
 
             if (response.ok) {
                 setUser(null)
-                navigate(ROUTES.login.to)
             } else {
                 showToast({ message: `Logout failed, try again later (${response.status}).`, variant: "danger" });
             }

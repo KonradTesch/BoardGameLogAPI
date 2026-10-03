@@ -7,6 +7,7 @@ import {AuthContext} from "../context/AuthContext.tsx";
 import AccountSettingsPage from "../pages/AccountSettingsPage.tsx";
 import EditSessionPage from "../pages/EditSessionPage.tsx";
 import {ROUTES} from "../types/routes.ts";
+import RequireAuth from "./RequireAuth.tsx";
 
 function AppContent() {
     const { isLoading } = useContext(AuthContext)!;
@@ -19,10 +20,12 @@ function AppContent() {
             <Routes>
                 <Route path="/" element={<Navigate to="/login" />} />
                 <Route path={ROUTES.login.path} element={<LoginPage />} />
-                <Route path={ROUTES.dashboard.path} element={<DashboardPage />} />
-                <Route path={ROUTES.accountSettings.path} element={<AccountSettingsPage />} />
-                <Route path={ROUTES.editSessions.path} element={<EditSessionPage />} />
-                <Route path={ROUTES.newSession.path} element={<EditSessionPage />} />
+                <Route element={<RequireAuth />}>
+                    <Route path={ROUTES.dashboard.path} element={<DashboardPage/>}/>
+                    <Route path={ROUTES.accountSettings.path} element={<AccountSettingsPage/>}/>
+                    <Route path={ROUTES.editSessions.path} element={<EditSessionPage/>}/>
+                    <Route path={ROUTES.newSession.path} element={<EditSessionPage/>}/>
+                </Route>
             </Routes>
         </>
     );
