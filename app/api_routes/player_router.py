@@ -27,7 +27,7 @@ def create_player(user_id: int,new_player: PlayerCreate, current_user: user_depe
         if new_player.name == "":
             raise UnprocessableException(f"Player name is empty.")
 
-        player = player_repo.create_player(user_id, new_player.name)
+        player = player_repo.create_player(new_player.name)
         return player
 
     except UnprocessableException as e:
@@ -37,12 +37,14 @@ def create_player(user_id: int,new_player: PlayerCreate, current_user: user_depe
         )
 
 
-@router.patch("/", status_code=status.HTTP_204_NO_CONTENT)
+@router.patch("/{player_id}", response_model=PlayerResponse, response_model_by_alias=True)
 def update_player(user_id: int, player_id: int, player_data: UpdatePlayerRequest, current_user: user_dependency, player_repo: player_repo_dependency):
     try:
         check_user(user_id, current_user)
 
-        player_repo.update_player(user_id, player_id, player_data.new_name)
+        updated_player = player_repo.update_player(player_id, player_data.new_name)
+
+        return updated_player
 
     except NotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
@@ -55,6 +57,6 @@ def delete_player(user_id: int, player_id: int, current_user: user_dependency, p
     try:
         check_user(user_id, current_user)
 
-        player_repo.delete_player(user_id, player_id)
+        player_repo.delete_player(player_id)
     except NotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))

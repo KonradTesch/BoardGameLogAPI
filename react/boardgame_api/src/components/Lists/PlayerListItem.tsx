@@ -16,9 +16,14 @@ function PlayerListItem(props: PlayerListProps) {
     const [editMode, setEditMode] = useState<boolean>(false);
     const [editPlayerName, setEditPlayerName] = useState<string>("");
 
-    const handleEditMode = () => {
+    const handleSetEditMode = () => {
         setEditMode(true);
         setEditPlayerName(props.player.name)
+    }
+
+    const handleEditPlayer = () => {
+        setEditMode(false)
+        props.onEdit(editPlayerName)
     }
 
     return (
@@ -39,7 +44,7 @@ function PlayerListItem(props: PlayerListProps) {
                         />
                         <Button
                             label="Edit"
-                            onClick={() => props.onEdit(editPlayerName)}
+                            onClick={handleEditPlayer}
                             variant={"primary"}
                             />
                     </div>
@@ -50,7 +55,7 @@ function PlayerListItem(props: PlayerListProps) {
                     <div className="d-flex gap-2">
                         <IconButton
                             icon="pencil-fill"
-                            onClick={handleEditMode}
+                            onClick={handleSetEditMode}
                             title="Edit"
                         />
                         <IconButton

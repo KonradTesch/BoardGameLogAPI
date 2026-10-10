@@ -145,17 +145,20 @@ export function UserDataProvider({ children }: { children: ReactNode}) {
             body: JSON.stringify({"newName": updatePlayerName})
         })
 
-        const data = await editPlayerResponse.json();
+
 
         if (editPlayerResponse.ok) {
-            setPlayers(prev => prev.map(player => player.id === data.id
-                    ? {...player, name: updatePlayerName}
+            const playerData: Player = await editPlayerResponse.json();
+
+            setPlayers(prev => prev.map(player => player.id === playerData.id
+                    ? playerData
                     : player
                 )
             );
             return {success: true, message: "Player edited successfully."};
         }
         else {
+            const data = await editPlayerResponse.json();
             return {success: false, error: getDetailStringOrDefault(data.detail, "Unknown error, try again later.")};
         }
     }
@@ -204,17 +207,19 @@ export function UserDataProvider({ children }: { children: ReactNode}) {
             body: JSON.stringify({"newTitle": updateBoardgameTitle})
         })
 
-        const data = await editBoardGameResponse.json();
+
 
         if (editBoardGameResponse.ok) {
+            const boardGameData: BoardGame = await editBoardGameResponse.json();
             setBoardGames(prev => prev.map(boardGame => boardGame.id === updateBoardGameId
-                    ? {...boardGame, title: updateBoardgameTitle}
+                    ? boardGameData
                     : boardGame
                 )
             );
             return {success: true, message: "Board game edited successfully."};
         }
         else {
+            const data = await editBoardGameResponse.json();
             return {success: false, error: getDetailStringOrDefault(data.detail, "Unknown error, try again later.")};
         }
     }

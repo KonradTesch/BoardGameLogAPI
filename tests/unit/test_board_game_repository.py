@@ -65,7 +65,10 @@ def test_get_board_game_reject_unknown_game(db_session, user):
 def test_update_board_game_title(db_session, user, board_game):
     repo = BoardGameRepository(db_session, user.id)
 
-    repo.update_board_game_title(board_game.id, "Risiko")
+    updated = repo.update_board_game_title(board_game.id, "Risiko")
+
+    assert updated.id == board_game.id
+    assert updated.title == "Risiko"
 
     stored = repo.get_board_game(board_game.id)
     assert stored.title == "Risiko"

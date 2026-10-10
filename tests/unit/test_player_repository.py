@@ -57,7 +57,10 @@ def test_get_player_reject_unknown_player(db_session, user):
 def test_update_player(db_session, user, players):
     repo = PlayerRepository(db_session, user.id)
 
-    repo.update_player(players[0].id, "Clara")
+    updated = repo.update_player(players[0].id, "Clara")
+
+    assert updated.id == players[0].id
+    assert updated.name == "Clara"
 
     stored = repo.get_player(players[0].id)
     assert stored.name == "Clara"
@@ -66,7 +69,9 @@ def test_update_player(db_session, user, players):
 def test_update_player_keep_own_name(db_session, user, players):
     repo = PlayerRepository(db_session, user.id)
 
-    repo.update_player(players[0].id, players[0].name)
+    updated = repo.update_player(players[0].id, players[0].name)
+
+    assert updated.name == "Anna"
 
     stored = repo.get_player(players[0].id)
     assert stored.name == "Anna"

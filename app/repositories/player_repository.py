@@ -45,7 +45,7 @@ class PlayerRepository:
 
         return player
 
-    def update_player(self, player_id: int, new_name: str) -> None:
+    def update_player(self, player_id: int, new_name: str) -> Player:
         player_already_exists = self.db.scalars(self._own_players()
 
                                                 .where(Player.id != player_id)
@@ -59,6 +59,8 @@ class PlayerRepository:
 
         player.name = new_name
         self.db.commit()
+
+        return player
 
     def delete_player(self, player_id: int) -> None:
         player_to_delete = self.get_player(player_id)

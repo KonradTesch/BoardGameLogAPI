@@ -44,7 +44,7 @@ class BoardGameRepository:
         return board_game
 
 
-    def update_board_game_title(self, board_game_id:int, new_title:str) -> None:
+    def update_board_game_title(self, board_game_id:int, new_title:str) -> BoardGame:
         if new_title == "":
             raise UnprocessableException(f"Board game title is empty.")
 
@@ -53,6 +53,8 @@ class BoardGameRepository:
         board_game.title = new_title
 
         self.db.commit()
+
+        return board_game
 
 
     def delete_board_game(self, board_game_id:int) -> None:

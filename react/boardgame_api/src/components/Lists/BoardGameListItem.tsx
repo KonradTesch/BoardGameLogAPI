@@ -16,9 +16,15 @@ function BoardGameListItem(props: BoardGameListProps) {
     const [ editTitle, setEditTitle ] = useState<string>("");
     const [ editMode, setEditMode ] = useState<boolean>(false);
 
-    const handleEditMode = () => {
+    const handleSetEditMode = () => {
         setEditMode(true);
         setEditTitle(props.boardGame.title);
+    }
+
+    const handleEditBoardGame = () => {
+        setEditMode(false);
+
+        props.onEdit(editTitle)
     }
 
     return (
@@ -39,7 +45,7 @@ function BoardGameListItem(props: BoardGameListProps) {
                         />
                         <Button
                             label="Edit"
-                            onClick={() => props.onEdit(editTitle)}
+                            onClick={handleEditBoardGame}
                             variant={"primary"}
                             />
                     </div>
@@ -50,7 +56,7 @@ function BoardGameListItem(props: BoardGameListProps) {
             <div className="d-flex gap-2">
                 <IconButton
                     icon="pencil-fill"
-                    onClick={handleEditMode}
+                    onClick={handleSetEditMode}
                     title="Edit"
                 />
                 <IconButton

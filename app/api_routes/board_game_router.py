@@ -38,12 +38,14 @@ def delete_board_game(user_id: int, board_game_id: int , current_user:user_depen
     except NotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
-@router.patch("/{board_game_id}", status_code=status.HTTP_204_NO_CONTENT)
+@router.patch("/{board_game_id}", response_model=BoardGameResponse, response_model_by_alias=True)
 def update_board_game(user_id: int, board_game_id: int, current_user:user_dependency, board_game_data: EditBoardGameRequest, repo: board_game_repo_dependency):
     try:
         check_user(user_id, current_user)
 
-        repo.update_board_game_title(board_game_id, board_game_data.new_title)
+        updated_board_game = repo.update_board_game_title(board_game_id, board_game_data.new_title)
+
+        return updated_board_game
 
     except NotFoundException as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
