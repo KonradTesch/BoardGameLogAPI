@@ -1,12 +1,16 @@
 from datetime import date
 
 import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from testcontainers.community.postgres import PostgresContainer
 
+from app.database import get_db
+from app.main import app
 from app.models import Base
 from app.models import BoardGame, Player, User, GameSession, SessionPlayer
+from tests.constants import TEST_PASSWORD_HASH, TEST_PASSWORD
 
 
 @pytest.fixture(scope="session")
@@ -27,8 +31,28 @@ def db_session(engine):
 
 
 @pytest.fixture
+def client(db_session):
+    def override_get_db():
+        yield db_session
+
+    app.dependency_overrides[get_db] = override_get_db
+    with TestClient(app) as test_client:
+        yield test_client
+    app.dependency_overrides.clear()
+
+
+@pytest.fixture
+def logged_in_client(client, user):
+    response = client.post("/auth/login", data={"username": user.username, "password": TEST_PASSWORD})
+
+    assert response.status_code == 200, response.text
+
+    return client
+
+
+@pytest.fixture
 def user(db_session):
-    user = User(username="Max", hashed_password="something")
+    user = User(username="Max", hashed_password=TEST_PASSWORD_HASH)
     db_session.add(user)
     db_session.commit()
     return user
@@ -36,7 +60,7 @@ def user(db_session):
 
 @pytest.fixture
 def other_user(db_session):
-    user = User(username="Moritz", hashed_password="something")
+    user = User(username="Moritz", hashed_password=TEST_PASSWORD_HASH)
     db_session.add(user)
     db_session.commit()
     return user
@@ -85,4 +109,5 @@ def make_game_session(db_session):
         db_session.add(game_session)
         db_session.commit()
         return game_session
+
     return _make

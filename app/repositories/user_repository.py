@@ -30,7 +30,7 @@ class UserRepository:
         user = self.db.scalars(select(User).where(User.username == username)).first()
 
         if not user or not bcrypt_context.verify(password, str(user.hashed_password)):
-            raise NotFoundException(f"Incorrect username or password")
+            raise NotFoundException("Incorrect username or password")
 
         return user
 
