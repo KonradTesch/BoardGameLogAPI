@@ -1,13 +1,27 @@
-from sqlalchemy import select, Sequence
+from _collections_abc import Sequence
+
+import bcrypt
+from sqlalchemy import select
 from sqlalchemy.orm import Session
-from passlib.context import CryptContext
 
 from app.domain.auth import RegisterData
 from app.models import User
 from app.custom_exceptions import NotFoundException, UnauthorizedException, UnprocessableException
 
-bcrypt_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+BCRYPT_MAX_BYTES = 72
 
+def hash_password(password: str) -> str:
+    password_bytes = password.encode("utf-8")
+    if len(password_bytes) > BCRYPT_MAX_BYTES:
+        raise UnprocessableException(f"Password must not be longer than {BCRYPT_MAX_BYTES} bytes")
+    return bcrypt.hashpw(password_bytes, bcrypt.gensalt()).decode("utf-8")
+
+
+def verify_password(password: str, hashed_password: str) -> bool:
+    password_bytes = password.encode("utf-8")
+    if len(password_bytes) > BCRYPT_MAX_BYTES:
+        return False
+    return bcrypt.checkpw(password_bytes, hashed_password.encode("utf-8"))
 
 class UserRepository:
     def __init__(self, db: Session):
@@ -20,16 +34,17 @@ class UserRepository:
 
         new_user = User(
             username=register_data.username,
-            hashed_password=bcrypt_context.hash(register_data.password))
+            hashed_password=hash_password(register_data.password)
+        )
         self.db.add(new_user)
         self.db.commit()
 
         return new_user
 
     def authenticate_user(self, username: str, password: str) -> User:
-        user = self.db.scalars(select(User).where(User.username == username)).first()
+        user: User | None = self.db.scalars(select(User).where(User.username == username)).first()
 
-        if not user or not bcrypt_context.verify(password, str(user.hashed_password)):
+        if not user or not verify_password(password, str(user.hashed_password)):
             raise NotFoundException("Incorrect username or password")
 
         return user
@@ -46,7 +61,7 @@ class UserRepository:
         user = self.db.scalars(select(User).where(User.id == user_id)).first()
 
         if not user:
-            raise NotFoundException(f"User not found")
+            raise NotFoundException("User not found")
 
         user.username = new_username
         self.db.commit()
@@ -54,11 +69,11 @@ class UserRepository:
     def change_password(self, user_id: int, old_password: str, new_password: str):
         current_user = self.validate_user(user_id)
 
-        if not bcrypt_context.verify(old_password, str(current_user.hashed_password)):
+        if not verify_password(old_password, str(current_user.hashed_password)):
             raise UnauthorizedException("Old password is incorrect.")
 
         # Hash and save the new password
-        current_user.hashed_password = bcrypt_context.hash(new_password)
+        current_user.hashed_password = hash_password(new_password)
         self.db.commit()
 
     def delete_user(self, user_id: int):
@@ -68,7 +83,7 @@ class UserRepository:
         self.db.commit()
 
     def validate_user(self, user_id:int) -> User:
-        user = self.db.scalars(select(User).where(User.id == user_id)).first()
+        user = self.db.get(User, user_id)
 
         if not user:
             raise NotFoundException("User not found")

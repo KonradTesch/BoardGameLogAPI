@@ -5,7 +5,7 @@ from sqlalchemy import select
 
 from app.config import settings
 from app.models import User
-from app.repositories.user_repository import bcrypt_context
+from app.repositories.user_repository import verify_password
 from app.service.auth_logic import decode_access_token
 from tests.constants import TEST_PASSWORD
 
@@ -56,7 +56,7 @@ def test_register_creates_user(db_session, client):
 
     assert created_user is not None
     assert created_user.hashed_password != password
-    assert bcrypt_context.verify(password, created_user.hashed_password)
+    assert verify_password(password, created_user.hashed_password)
 
 
 def test_register_reject_existing_username(db_session, client, user):
@@ -68,7 +68,7 @@ def test_register_reject_existing_username(db_session, client, user):
     users = db_session.scalars(select(User).where(User.username == user.username)).all()
 
     assert len(users) == 1
-    assert bcrypt_context.verify(TEST_PASSWORD, users[0].hashed_password)
+    assert verify_password(TEST_PASSWORD, users[0].hashed_password)
 
 
 def test_get_auth_user_returns_current_user(logged_in_client, user):

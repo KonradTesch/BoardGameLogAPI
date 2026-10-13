@@ -15,7 +15,7 @@ from tests.constants import TEST_PASSWORD_HASH, TEST_PASSWORD
 
 @pytest.fixture(scope="session")
 def engine():
-    with PostgresContainer("postgres:16") as postgres:
+    with PostgresContainer("postgres:16", driver="psycopg") as postgres:
         engine = create_engine(postgres.get_connection_url())
         yield engine
         engine.dispose()

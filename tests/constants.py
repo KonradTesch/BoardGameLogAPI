@@ -1,4 +1,4 @@
-from app.repositories.user_repository import bcrypt_context
+from app.repositories.user_repository import hash_password
 
 TEST_PASSWORD = "secret123"
-TEST_PASSWORD_HASH = bcrypt_context.hash(TEST_PASSWORD)
+TEST_PASSWORD_HASH = hash_password(TEST_PASSWORD)
