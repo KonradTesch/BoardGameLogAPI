@@ -1,124 +1,196 @@
 # BoardGameLogAPI
 
-A web application for tracking board game sessions, managing players, and analyzing game statistics. Built with FastAPI, SQLAlchemy, and Bootstrap.
+A web application for tracking board game sessions, managing players and board games, and analyzing game statistics. It consists of a JSON-only **FastAPI** backend and a **React/TypeScript** single-page frontend.
 
 ## Features
 
-- **User Management**: Secure user registration and authentication with JWT tokens
+- **User Management**: Registration, login/logout, change username and password, delete account
+- **Secure Authentication**: JWT stored in an `httponly` cookie
 - **Session Tracking**: Log board game sessions with dates, players, scores, and winners
-- **Player Management**: Create and manage players associated with your account
-- **Statistics**: View detailed statistics for both players and games
-  - Player stats: Total sessions, win rates, average scores, and best scores per game
-  - Game stats: Session counts, best scores, and top players per game
-- **Responsive UI**: Modern dark-themed interface built with Bootstrap 5
+- **Player Management**: Create, rename, and delete players associated with your account
+- **Board Game Management**: Maintain your own collection of board games
+- **Statistics**: Player and game statistics (sessions played, win rates, average and best scores)
+- **Responsive UI**: React frontend styled with Bootstrap 5
 
 ## Technologies
 
-- **Backend**: FastAPI, SQLAlchemy, Alembic
-- **Authentication**: JWT tokens with passlib and python-jose
-- **Database**: PostgreSQL (configurable via environment variables)
-- **Frontend**: Jinja2 templates, Bootstrap 5, vanilla JavaScript
-- **Styling**: Custom CSS with dark theme
+- **Backend**: FastAPI, SQLAlchemy 2, Alembic, Pydantic v2 / pydantic-settings, psycopg 3
+- **Authentication**: JWT via python-jose, password hashing with bcrypt
+- **Database**: PostgreSQL 16 (provided via Docker Compose)
+- **Frontend**: React 19, TypeScript, Vite, react-router-dom v7, Bootstrap 5, Bootstrap Icons
+- **Testing**: pytest, httpx, testcontainers
 
 ## Installation
 
-1. Clone the repository:
+### Prerequisites
+
+- Python 3.13+
+- Node.js (LTS) and npm
+- Docker (for the database and the test suite)
+
+### 1. Clone the repository
+
 ```bash
-git clone https://github.com/yourusername/BoardGameLogAPI.git
+git clone https://github.com/KonradTesch/BoardGameLogAPI.git
 cd BoardGameLogAPI
 ```
 
-2. Install dependencies:
-```bash
-pip install -r requirements.txt
-```
+### 2. Create a `.env` file in the project root
 
-3. Create a `.env` file in the root directory:
 ```env
-DATABASE_URL=postgresql://user:password@localhost/dbname
+# Database (used by the backend and Alembic)
+DATABASE_URL=postgresql+psycopg://user:password@localhost:5432/dbname
+
+# Postgres container (used by compose.yaml)
+POSTGRES_USER=user
+POSTGRES_PASSWORD=password
+POSTGRES_DB=dbname
+
+# Auth
 SECRET_KEY=your-secret-key-here
 ALGORITHM=HS256
+# Optional (defaults shown)
+ACCESS_TOKEN_EXPIRE_DAYS=7
+TOKEN_RENEW_AFTER_HOURS=24
 ```
 
-4. Initialize the database:
+### 3. Start the database
+
 ```bash
+docker compose up -d
+```
+
+### 4. Set up the backend
+
+```bash
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -r requirements.txt  # or requirements-dev.txt to include test tools
 alembic upgrade head
+```
+
+### 5. Set up the frontend
+
+```bash
+cd react/boardgame_api
+npm install
 ```
 
 ## Usage
 
-1. Start the application:
+1. Start the backend (port 8000, interactive API docs at `http://localhost:8000/docs`):
+   ```bash
+   python app/main.py
+   ```
+
+2. Start the frontend dev server:
+   ```bash
+   cd react/boardgame_api
+   npm run dev
+   ```
+
+3. Open `http://localhost:5173`, register an account or log in, and start tracking your sessions.
+
+The Vite dev server proxies all requests to `/api/*` to `http://127.0.0.1:8000`, stripping the `/api` prefix. In production this proxy must be replicated (e.g. with nginx).
+
+### Other frontend commands
+
 ```bash
-python main.py
+npm run build   # type-check + production build
+npm run lint    # eslint
 ```
 
-2. Open your browser and navigate to `http://localhost:8000`
+## Tests
 
-3. Register a new account or log in
+```bash
+pip install -r requirements-dev.txt
+pytest
+```
 
-4. Start tracking your board game sessions!
+- `tests/unit/` – repository tests
+- `tests/integration/` – router tests via the FastAPI test client
+
+The tests spin up a temporary PostgreSQL database with testcontainers, so Docker must be running.
 
 ## Project Structure
 
 ```
 BoardGameLogAPI/
-├── alembic/              # Database migrations
-├── api_routes/           # API route handlers
-│   ├── auth_router.py    # Authentication endpoints
-│   ├── user_router.py    # User management endpoints
-│   ├── player_router.py  # Player management endpoints
-│   └── session_router.py # Session management endpoints
-├── repositories/         # Database access layer
-│   └── db_manager.py     # Data managers for entities
-├── service/              # Business logic
-│   ├── auth_logic.py     # JWT token handling
-│   └── stats_calculator.py # Statistics calculations
-├── static/               # Static assets (CSS)
-├── templates/            # Jinja2 HTML templates
-├── models.py             # SQLAlchemy models
-├── custom_exceptions.py  # Custom exception classes
-└── main.py              # Application entry point
+├── app/
+│   ├── main.py                 # FastAPI app, CORS, router registration
+│   ├── config.py               # Settings loaded from .env
+│   ├── database.py             # Engine, SessionLocal, get_db() dependency
+│   ├── models.py               # SQLAlchemy ORM models
+│   ├── custom_exceptions.py    # Custom exception classes
+│   ├── api_routes/             # FastAPI routers + shared dependencies
+│   ├── domain/                 # Plain dataclasses passed between layers
+│   ├── repositories/           # One repository class per aggregate
+│   ├── schemas/                # Pydantic request/response models (camelCase)
+│   └── service/                # JWT handling, statistics
+├── alembic/                    # Database migrations
+├── tests/
+│   ├── unit/
+│   └── integration/
+├── react/boardgame_api/        # React/TypeScript frontend
+│   └── src/
+│       ├── context/            # Auth and user data contexts
+│       ├── layout/             # App auth check and route definitions
+│       ├── pages/              # Login, Dashboard, Account Settings, Edit Session
+│       ├── components/         # Reusable UI components
+│       ├── types/              # TypeScript types and route definitions
+│       └── util/               # Shared utilities
+├── compose.yaml                # PostgreSQL service
+├── requirements.txt
+└── requirements-dev.txt
 ```
+
+## Architecture
+
+- **Thin routers, repository pattern**: Routers parse requests and delegate to repository classes. Each repository receives a request-scoped SQLAlchemy session via the `get_db()` dependency.
+- **camelCase API**: Request/response schemas (`app/schemas/base.py`) use camelCase aliases (e.g. `boardGameId`), while Python code stays snake_case.
+- **Auth**: The JWT is set as an `httponly` cookie (`access_token`). Protected routes verify that the `user_id` in the path matches the authenticated user and return `403` otherwise.
 
 ## Database Schema
 
-- **Users**: User accounts with authentication
-- **Players**: Players associated with user accounts
-- **Boardgames**: Available board games
-- **Game_Session**: Individual game sessions
-- **Session_Player**: Junction table linking sessions, players, scores, and winners
+- **users**: User accounts
+- **players**: Players owned by a user
+- **boardgames**: Board games owned by a user
+- **sessions**: Game sessions owned by a user, each referencing a board game
+- **sessions_players**: Junction table linking sessions and players, with `score` and `winner`
 
 ## API Endpoints
 
-### Authentication
-- `POST /auth/` - Register new user
-- `POST /auth/token` - Login and receive access token
+All endpoints exchange JSON in camelCase. Protected endpoints require the `access_token` cookie.
 
-### User Management
-- `GET /user/{user_id}` - User home page
-- `PATCH /user/{user_id}` - Update username
-- `PATCH /user/{user_id}/password` - Change password
-- `DELETE /user/{user_id}` - Delete account
-- `POST /user/{user_id}/logout` - Logout
+### Authentication (`/auth`)
+- `POST /auth/register` – Register a new user
+- `POST /auth/login` – Log in and set the auth cookie
+- `GET /auth/user` – Get the currently authenticated user
+- `POST /auth/logout` – Log out and clear the auth cookie
 
-### Sessions
-- `GET /user/{user_id}/session/{session_id}` - View session details
-- `POST /user/{user_id}/session/` - Create new session
-- `PATCH /user/{user_id}/session/{session_id}` - Update session
-- `DELETE /user/{user_id}/session/{session_id}` - Delete session
+### User (`/user`)
+- `PATCH /user/{user_id}/username` – Change username
+- `PATCH /user/{user_id}/password` – Change password
+- `DELETE /user/{user_id}` – Delete account
+- `GET /user/{user_id}/boardgames/stats` – Board game statistics
 
-### Players
-- `POST /user/{user_id}/player/` - Create new player
-- `PATCH /user/{user_id}/player/` - Update player
-- `DELETE /user/{user_id}/player/` - Delete player
-- `GET /user/{user_id}/player/{player_id}/stats` - View player statistics
+### Sessions (`/user/{user_id}/sessions`)
+- `GET /` – List sessions
+- `POST /` – Create a session
+- `PATCH /{session_id}` – Update a session
+- `DELETE /{session_id}` – Delete a session
 
-### Statistics
-- `GET /user/{user_id}/stats/games` - View game statistics
+### Players (`/user/{user_id}/players`)
+- `GET /` – List players
+- `POST /` – Create a player
+- `PATCH /{player_id}` – Update a player
+- `DELETE /{player_id}` – Delete a player
 
-## Contributing
-
-Contributions are welcome! Please feel free to submit a Pull Request.
+### Board Games (`/user/{user_id}/board-games`)
+- `GET /` – List board games
+- `POST /` – Create a board game
+- `PATCH /{board_game_id}` – Update a board game
+- `DELETE /{board_game_id}` – Delete a board game
 
 ## License
 
@@ -130,6 +202,7 @@ Konrad Tesch
 
 ## Acknowledgments
 
-- Built with [FastAPI](https://fastapi.tiangolo.com/)
+- Built with [FastAPI](https://fastapi.tiangolo.com/) and [React](https://react.dev/)
+- Bundled with [Vite](https://vite.dev/)
 - UI powered by [Bootstrap 5](https://getbootstrap.com/)
 - Icons from [Bootstrap Icons](https://icons.getbootstrap.com/)
