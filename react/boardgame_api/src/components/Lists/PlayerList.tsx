@@ -8,7 +8,7 @@ interface PlayerListProps {
     playersToDelete: Player[];
     onDelete: (player: Player) => void;
     onOpenStats: (player:Player) => void;
-    onEditPlayer: (player: Player) => void;
+    onEditPlayer: (editName: string, player: Player) => void;
     waitForLoading?: boolean;
 }
 
@@ -18,14 +18,14 @@ function PlayerList({players, playersToDelete, onDelete, onOpenStats, onEditPlay
 
     return (
         <ul className="list-group list-group-flush">
-                {isLoading && waitForLoading ? <p>Loading...</p> : players?.map((player: Player, index) =>(
+                {isLoading && waitForLoading ? <p>Loading...</p> : players?.map((player: Player) =>(
                     ( !playersToDelete.includes(player) &&
                     <PlayerListItem
-                        index={index}
+                        key={player.id}
                         player={player}
                         onDelete={() => onDelete(player)}
                         onOpenStats={() => onOpenStats(player)}
-                        onEdit={() => onEditPlayer(player)}
+                        onEdit={(editName) => onEditPlayer(editName, player)}
                     />)
                     ))}
         </ul>

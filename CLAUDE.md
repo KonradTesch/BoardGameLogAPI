@@ -36,6 +36,14 @@ npm run build   # type-check + vite build
 npm run lint    # eslint
 ```
 
+### Deployment
+
+`compose.prod.yaml` runs the production stack: Postgres (internal only), the backend image from the root `Dockerfile` (runs `alembic upgrade head` on start), and a Caddy image built from `react/boardgame_api/Dockerfile` that serves the built SPA, terminates TLS for `$DOMAIN`, and proxies `/api/*` to `backend:8000` with the prefix stripped (`react/boardgame_api/Caddyfile`). Production env template: `.env.example`. Settings like `COOKIE_SECURE`, `ENABLE_DOCS`, `CORS_ORIGINS` live in `app/config.py`.
+
+```bash
+docker compose -f compose.prod.yaml up -d --build
+```
+
 ### Environment
 
 Requires a `.env` file in the project root:

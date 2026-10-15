@@ -7,7 +7,7 @@ def set_auth_cookie(response, token):
         key="access_token",
         value=token,
         httponly=True,
-        secure=False,
+        secure=settings.cookie_secure,
         samesite="lax",
         max_age=int(timedelta(days=settings.access_token_expire_days).total_seconds()),
     )
@@ -16,6 +16,6 @@ def clear_auth_cookie(response):
     response.delete_cookie(
         key="access_token",
         httponly=True,
-        secure=False,
+        secure=settings.cookie_secure,
         samesite="lax",
     )

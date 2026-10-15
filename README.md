@@ -52,7 +52,12 @@ ALGORITHM=HS256
 # Optional (defaults shown)
 ACCESS_TOKEN_EXPIRE_DAYS=7
 TOKEN_RENEW_AFTER_HOURS=24
+COOKIE_SECURE=false
+ENABLE_DOCS=true
+CORS_ORIGINS=["http://localhost:5173"]
 ```
+
+See `.env.example` for a production template.
 
 ### 3. Start the database
 
@@ -91,7 +96,7 @@ npm install
 
 3. Open `http://localhost:5173`, register an account or log in, and start tracking your sessions.
 
-The Vite dev server proxies all requests to `/api/*` to `http://127.0.0.1:8000`, stripping the `/api` prefix. In production this proxy must be replicated (e.g. with nginx).
+The Vite dev server proxies all requests to `/api/*` to `http://127.0.0.1:8000`, stripping the `/api` prefix. In production, Caddy takes over this role (see [Deployment](#deployment)).
 
 ### Other frontend commands
 
@@ -111,6 +116,38 @@ pytest
 - `tests/integration/` – router tests via the FastAPI test client
 
 The tests spin up a temporary PostgreSQL database with testcontainers, so Docker must be running.
+
+## Deployment
+
+Production runs entirely via Docker Compose (`compose.prod.yaml`) on a single server:
+
+```
+Internet ──443──► web (Caddy: HTTPS via Let's Encrypt, serves the built React app)
+                    └─ /api/* ──(prefix stripped)──► backend:8000 (uvicorn)
+                                                       └─► db:5432 (Postgres, internal only)
+```
+
+Frontend and API share one origin, so no CORS configuration is needed.
+
+1. Point a DNS A/AAAA record for your domain to the server and open ports 80 and 443.
+2. Clone the repository on the server and create the `.env`:
+   ```bash
+   cp .env.example .env
+   # set DOMAIN, POSTGRES_*, DATABASE_URL (host "db"), SECRET_KEY
+   ```
+   Keep `COOKIE_SECURE=true` (the auth cookie is only sent over HTTPS) and `ENABLE_DOCS=false` to hide `/docs`.
+3. Build and start:
+   ```bash
+   docker compose -f compose.prod.yaml up -d --build
+   ```
+   Database migrations (`alembic upgrade head`) run automatically when the backend container starts. Health check: `https://<domain>/api/health`.
+
+**Updating:** `git pull`, then run the same `docker compose ... up -d --build` command again.
+
+**Backup:**
+```bash
+docker compose -f compose.prod.yaml exec db pg_dump -U <POSTGRES_USER> <POSTGRES_DB> > backup.sql
+```
 
 ## Project Structure
 
@@ -139,7 +176,10 @@ BoardGameLogAPI/
 │       ├── components/         # Reusable UI components
 │       ├── types/              # TypeScript types and route definitions
 │       └── util/               # Shared utilities
-├── compose.yaml                # PostgreSQL service
+├── compose.yaml                # PostgreSQL service (local development)
+├── compose.prod.yaml           # Production stack: db + backend + Caddy
+├── Dockerfile                  # Backend image
+├── .env.example                # Environment template
 ├── requirements.txt
 └── requirements-dev.txt
 ```

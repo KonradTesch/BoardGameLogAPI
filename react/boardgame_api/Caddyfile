@@ -1,0 +1,15 @@
+{$DOMAIN} {
+	encode zstd gzip
+
+	# Same as the Vite dev proxy: /api/* -> backend with the /api prefix stripped
+	handle_path /api/* {
+		reverse_proxy backend:8000
+	}
+
+	# Serve the SPA; unknown paths fall back to index.html for client-side routing
+	handle {
+		root * /srv
+		try_files {path} /index.html
+		file_server
+	}
+}
